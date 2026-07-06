@@ -210,7 +210,7 @@ http://localhost:8501
 
 看板左侧提供 `语言` 选择框，可在中文和英文界面之间切换。
 
-## 生成 PPT 总览图
+## 生成总览图
 
 ```bash
 python scripts/generate_overview_figures.py
