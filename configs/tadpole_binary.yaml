@@ -1,0 +1,27 @@
+project:
+  name: AD-TabFusion
+  seed_list: [42, 43, 44, 45, 46]
+  output_dir: outputs
+
+data:
+  raw_csv: data/raw/tadpole/TADPOLE_D1_D2.csv
+  subject_col: RID
+  visit_col: VISCODE
+  label_col: DX
+  task: diagnosis_binary
+  use_baseline_only: false
+
+split:
+  test_size: 0.20
+  val_size: 0.10
+
+preprocessing:
+  numeric_impute: median
+  categorical_impute: most_frequent
+  max_missing_rate: 0.60
+
+models:
+  run:
+    - logistic_regression
+    - random_forest
+

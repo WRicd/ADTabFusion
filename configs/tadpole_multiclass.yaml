@@ -1,0 +1,56 @@
+project:
+  name: AD-TabFusion
+  seed_list: [42, 43, 44, 45, 46]
+  output_dir: outputs
+
+data:
+  raw_csv: data/raw/tadpole/TADPOLE_D1_D2.csv
+  subject_col: RID
+  visit_col: VISCODE
+  label_col: DX
+  task: diagnosis_multiclass
+  task_mode: all_visits
+
+split:
+  test_size: 0.20
+  val_size: 0.10
+
+preprocessing:
+  numeric_impute: median
+  categorical_impute: most_frequent
+  max_missing_rate: 0.60
+
+models:
+  run:
+    - logistic_regression
+    - random_forest
+    - hist_gradient_boosting
+    - xgboost
+  logistic_regression:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+  random_forest:
+    n_estimators: 300
+    max_depth: null
+    class_weight: balanced
+  hist_gradient_boosting:
+    max_iter: 200
+    learning_rate: 0.05
+    max_leaf_nodes: 31
+  xgboost:
+    n_estimators: 200
+    learning_rate: 0.05
+    max_depth: 3
+
+evaluation:
+  metrics:
+    - accuracy
+    - balanced_accuracy
+    - macro_f1
+    - roc_auc_ovr
+    - cohen_kappa
+
+explainability:
+  max_samples: 300
+

@@ -1,0 +1,4 @@
+model,task_mode,accuracy_mean,accuracy_std,balanced_accuracy_mean,balanced_accuracy_std,macro_f1_mean,macro_f1_std,roc_auc_ovr_mean,roc_auc_ovr_std
+hist_gradient_boosting,baseline_only,0.9973509933774836,0.003244357275209524,0.9973245924875975,0.003303527036966373,0.9973244692506897,0.0032768473858434373,0.9973245924875975,0.003303527036966373
+logistic_regression,baseline_only,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0
+random_forest,baseline_only,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0

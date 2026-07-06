@@ -1,0 +1,9 @@
+{
+  "model": "random_forest",
+  "seed": 45,
+  "label_mapping": {
+    "CN": 0,
+    "MCI": 1,
+    "AD": 2
+  }
+}

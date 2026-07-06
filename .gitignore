@@ -1,0 +1,17 @@
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.pyc
+CODEX.md
+
+data/raw/
+outputs/models/
+outputs/**/*.joblib
+outputs/**/*.pkl
+outputs/**/.matplotlib/
+outputs/reports/best_model_predictions.csv
+outputs/reports/error_cases.csv
+outputs/metrics/split_seed_*.json

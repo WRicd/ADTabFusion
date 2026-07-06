@@ -1,0 +1,52 @@
+project:
+  name: AD-TabFusion
+  seed_list: [42, 43, 44, 45, 46]
+  output_dir: outputs
+
+data:
+  raw_csv: data/raw/tadpole/TADPOLE_D1_D2.csv
+  subject_col: RID
+  visit_col: VISCODE
+  label_col: DX
+  task: diagnosis_multiclass
+  task_mode: all_visits
+
+split:
+  test_size: 0.20
+  val_size: 0.10
+
+preprocessing:
+  numeric_impute: median
+  categorical_impute: most_frequent
+  max_missing_rate: 0.60
+
+models:
+  run:
+    - logistic_regression
+  logistic_regression:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+
+ablation:
+  model: logistic_regression
+  groups:
+    demographic: [demographic]
+    cognitive: [cognitive]
+    mri_derived: [mri_derived]
+    genetic: [genetic]
+    demographic+cognitive: [demographic, cognitive]
+    demographic+mri_derived: [demographic, mri_derived]
+    demographic+cognitive+mri_derived: [demographic, cognitive, mri_derived]
+    demographic+cognitive+mri_derived+genetic: [demographic, cognitive, mri_derived, genetic]
+    all_without_cognitive: [demographic, mri_derived, genetic]
+    all_without_mri: [demographic, cognitive, genetic]
+    all_without_genetic: [demographic, cognitive, mri_derived]
+
+missing_modality:
+  mask:
+    - cognitive
+    - mri_derived
+    - genetic
+    - demographic
+

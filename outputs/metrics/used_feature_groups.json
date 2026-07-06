@@ -1,0 +1,30 @@
+{
+  "demographic": [
+    "AGE",
+    "PTGENDER",
+    "PTEDUCAT"
+  ],
+  "cognitive": [
+    "MMSE",
+    "ADAS11",
+    "ADAS13",
+    "CDRSB",
+    "RAVLT_immediate",
+    "RAVLT_learning",
+    "RAVLT_forgetting",
+    "RAVLT_perc_forgetting",
+    "FAQ_bl"
+  ],
+  "mri_derived": [
+    "Ventricles",
+    "Hippocampus",
+    "WholeBrain",
+    "Entorhinal",
+    "Fusiform",
+    "MidTemp",
+    "ICV"
+  ],
+  "genetic": [
+    "APOE4"
+  ]
+}
