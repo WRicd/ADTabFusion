@@ -25,8 +25,6 @@ Unavailable in the current CSV:
 - CSF: `ABETA`, `TAU`, `PTAU`
 - D3 external testing
 
-`data/raw/` is ignored because ADNI/TADPOLE data must not be redistributed.
-
 ## Install
 
 ```bash
@@ -82,7 +80,7 @@ Use the sidebar `Language` selector to switch between English and Chinese dashbo
 
 ## Overview Figures
 
-Generate PPT-ready overview figures:
+Generate overview figures:
 
 ```bash
 python scripts/generate_overview_figures.py
@@ -114,17 +112,13 @@ outputs/figures/overview/
 pytest tests/
 ```
 
-## Out Of Scope
-
-This stage does not implement raw MRI processing, PET/CSF experiments, D3 external evaluation, OASIS-3, GNN, Transformer, 3D CNN, cloud deployment, or automatic ADNI data download.
-
 ---
 
 # AD-TabFusion 中文说明
 
 AD-TabFusion 是一个面向 ADNI/TADPOLE D1_D2 表格数据的轻量级、可复现、强调防止数据泄露的阿尔茨海默病诊断预测 demo。
 
-当前版本重点不是复杂深度学习，而是：
+当前版本重点是：
 
 - 本地可复现运行
 - subject-level 数据切分，避免同一受试者进入多个 split
@@ -156,8 +150,6 @@ data/raw/tadpole/TADPOLE_D1_D2.csv
 - PET：`FDG`, `AV45`, `PIB`
 - CSF：`ABETA`, `TAU`, `PTAU`
 - D3 外部测试集
-
-注意：`data/raw/` 已被 `.gitignore` 忽略，不应提交或分发 ADNI/TADPOLE 原始数据。
 
 ## 安装依赖
 
@@ -259,17 +251,3 @@ outputs/figures/overview/
 ```bash
 pytest tests/
 ```
-
-## 当前阶段不做的内容
-
-当前阶段不实现：
-
-- raw MRI 处理
-- PET/CSF 实验
-- D3 外部测试
-- OASIS-3 接入
-- GNN
-- Transformer
-- 3D CNN
-- 云端部署
-- 自动下载 ADNI 数据
