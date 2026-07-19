@@ -1,0 +1,15 @@
+project:
+  name: TADPOLE Tau PET Sparse Cohort
+  phase: phase_b
+  output_dir: outputs/phase_b
+data:
+  raw_csv: data/tadpole_challenge/TADPOLE_D1_D2.csv
+  feature_catalog: outputs/phase_a/feature_catalog.csv
+  subject_col: RID
+  visit_col: VISCODE
+  date_col: EXAMDATE
+  label_col: DX
+sparse_cohort:
+  modality: pet_other
+paths:
+  summary_report: outputs/phase_b/sparse_modalities/tau_pet_cohort_summary.md

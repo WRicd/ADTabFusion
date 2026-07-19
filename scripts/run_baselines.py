@@ -10,6 +10,7 @@ from src.config import ensure_output_dirs, load_config
 from src.explainability import write_basic_feature_importance
 from src.reporting import analyze_error_cases
 from src.training import run_baselines
+from src.tadpole.phase_b import run_primary_baselines
 
 
 def main() -> None:
@@ -20,7 +21,12 @@ def main() -> None:
     config = load_config(args.config)
     output_dir = config["project"].get("output_dir", "outputs")
     ensure_output_dirs(output_dir)
-    results = run_baselines(config, quick=args.quick)
+    if config.get("project", {}).get("phase") == "phase_b":
+        results = run_primary_baselines(config, quick=args.quick)
+        print(results.to_string(index=False))
+        return
+    else:
+        results = run_baselines(config, quick=args.quick)
     model_path = Path(output_dir) / "models" / "best_model.joblib"
     if model_path.exists():
         import joblib

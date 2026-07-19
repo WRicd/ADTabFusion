@@ -1,0 +1,14 @@
+{
+  "primary": {
+    "model_sha256": "9c381d831126920d7bba7322786a97bfed13902561719077deef7cea2ef675e7",
+    "config_sha256": "8a2545592bc3dd22c3da5cb833589e22fff1478933033c2d477c5f5d3db53c80"
+  },
+  "sensitivity": {
+    "model_sha256": "419904735ae0ae40b48d9cfde38dbb7f6304fa37ede5244008f6431c8b8cb240",
+    "config_sha256": "8a2545592bc3dd22c3da5cb833589e22fff1478933033c2d477c5f5d3db53c80"
+  },
+  "horizon_aware": {
+    "model_sha256": "c9d96f64b7dd45ac120d272ab585dcd8a246fe18245eb7c2e552d421dc16048f",
+    "config_sha256": "fe7bc511ac7fa75ce909c2c70661bb3cc586e1de7a9005a5e3a9b33426fc34fb"
+  }
+}

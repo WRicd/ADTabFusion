@@ -1,0 +1,2 @@
+model,split,n_rows,roc_auc,pr_auc,accuracy,balanced_accuracy,macro_f1,sensitivity,specificity,ppv,npv,brier_score,log_loss
+logistic_regression,locked_temporal_test,136,0.7612994350282486,0.42397038067987286,0.7352941176470589,0.6355932203389831,0.5840978593272171,0.5,0.7711864406779662,0.25,0.91,0.1559525534939229,0.45982268754980415

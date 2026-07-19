@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -76,50 +77,58 @@ def generate_report(output_path: str | Path = "outputs/reports/final_report.md")
     missing = _read_csv(metrics_dir / "missing_modality_results.csv")
     leakage = (reports_dir / "leakage_check.md").read_text(encoding="utf-8") if (reports_dir / "leakage_check.md").exists() else "Leakage check has not been generated."
     modality_importance = _read_csv(metrics_dir / "modality_importance_best_model.csv")
+    inventory = _read_json(metrics_dir / "adni_file_inventory.json", [])
+    availability = _read_json(metrics_dir / "adni_modality_availability.json", {})
+    inventory_summary = _format_inventory_summary(inventory, availability)
 
     lines = [
         "# AD-TabFusion Report",
         "",
-        "## 1. Dataset Summary",
-        "Current implementation uses the local TADPOLE_D1_D2.csv file placed under `data/raw/tadpole/`.",
+        "## 1. Raw ADNI File Inventory",
+        inventory_summary,
         "",
-        "## 2. Available and Unavailable Modalities",
-        "Active modalities: demographic, cognitive, MRI-derived, genetic/APOE4.",
-        "Unavailable in current D1_D2 CSV: PET (`FDG`, `AV45`, `PIB`), CSF (`ABETA`, `TAU`, `PTAU`), D3 external test data.",
+        "The inventory only confirms local table availability. Newly detected tables are not merged into the model pipeline at this stage.",
         "",
-        "## 3. Leakage Control",
+        "## 2. Dataset Summary",
+        "Current model results use the previously prepared TADPOLE_D1_D2 table.",
+        "",
+        "## 3. Model-Active Modalities",
+        "Active in the existing model outputs: demographic, cognitive, MRI-derived, genetic/APOE4.",
+        "Raw PET and biofluid files found by the inventory are not yet model features.",
+        "",
+        "## 4. Leakage Control",
         leakage,
         "",
-        "## 4. Task Definitions",
+        "## 5. Task Definitions",
         "Supported task modes are `baseline_only` and `all_visits`, both using subject-level splitting by `RID`.",
         "MCI conversion is skipped because the current CSV has no baseline MCI cohort in `DX_bl`.",
         "",
-        "## 5. Model List",
+        "## 6. Model List",
         "Logistic Regression, Random Forest, HistGradientBoosting, and optional XGBoost/LightGBM when installed.",
         "",
-        "## 6. Baseline-Only Results",
+        "## 7. Baseline-Only Results",
         baseline_only,
         "",
-        "## 7. All-Visit Results",
+        "## 8. All-Visit Results",
         all_visits,
         "",
-        "## 8. Modality Ablation",
+        "## 9. Modality Ablation",
         ablation,
         "",
-        "## 9. Missing-Modality Robustness",
+        "## 10. Missing-Modality Robustness",
         missing,
         "",
-        "## 10. Explainability",
+        "## 11. Explainability",
         modality_importance,
         "",
-        "## 11. Error-Case Analysis",
+        "## 12. Error-Case Analysis",
         f"See `{reports_dir / 'error_case_summary.md'}` and `error_cases.csv`.",
         "",
-        "## 12. Limitations",
-        "No raw MRI, PET/CSF experiments, D3 external evaluation, OASIS-3, GNN, Transformer, 3D CNN, cloud deployment, or automatic ADNI download is included in this stage.",
+        "## 13. Limitations",
+        "No cross-table ADNI merge, raw-image processing, PET/CSF model experiment, D3 external evaluation, OASIS-3, GNN, Transformer, 3D CNN, cloud deployment, or automatic ADNI download is included in this stage.",
         "",
-        "## 13. Next Steps",
-        "Add full TADPOLE/ADNI variables, especially PET/CSF, optional D3 external test data, and a safe MCI conversion cohort.",
+        "## 14. Next Steps",
+        "Confirm the inventory and data dictionary, then design a leakage-safe subject-visit-level master table before adding new modalities to training.",
     ]
     output_path.write_text("\n".join(lines), encoding="utf-8")
 
@@ -129,6 +138,28 @@ def _read_csv(path: Path) -> str:
         return f"`{path}` was not generated."
     df = pd.read_csv(path)
     return "```text\n" + df.to_string(index=False) + "\n```"
+
+
+def _read_json(path: Path, default):
+    if not path.exists():
+        return default
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _format_inventory_summary(inventory: list, availability: dict) -> str:
+    if not inventory and not availability:
+        return "ADNI raw-file inventory has not been generated."
+    readable = sum(item.get("read_status") != "failed" for item in inventory)
+    available = [key for key, value in availability.items() if value.get("available")]
+    missing = [key for key, value in availability.items() if not value.get("available")]
+    return "\n".join(
+        [
+            f"Scanned CSV files: {len(inventory)} ({readable} readable).",
+            f"Available categories: {', '.join(available) if available else 'none'}.",
+            f"Missing categories: {', '.join(missing) if missing else 'none'}.",
+            "See `docs/adni_file_inventory.md` for the structure-only file inventory.",
+        ]
+    )
 
 
 def _error_category(row: pd.Series) -> str:

@@ -1,0 +1,10 @@
+{
+  "primary_candidate": "compact_random_forest",
+  "sensitivity_candidate": "full_hist_gradient_boosting",
+  "full_compatible": false,
+  "full_feature_presence_ratio": 0.8405797101449275,
+  "feature_threshold": 0.95,
+  "required_modalities_available": false,
+  "severe_dtype_mismatch": false,
+  "decision_frozen_before_d4": true
+}

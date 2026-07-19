@@ -1,0 +1,44 @@
+project:
+  name: AD-TabFusion Full Primary All Visits
+  phase: phase_b
+  seed_list: [42, 43, 44, 45, 46]
+  output_dir: outputs/phase_b
+
+data:
+  raw_csv: data/tadpole_challenge/TADPOLE_D1_D2.csv
+  dictionary_csv: data/tadpole_challenge/TADPOLE_D1_D2_Dict.csv
+  subject_col: RID
+  visit_col: VISCODE
+  date_col: EXAMDATE
+  label_col: DX
+  task: diagnosis_multiclass
+  task_mode: all_visits
+  feature_whitelist: outputs/phase_a/primary_whitelist.json
+  feature_catalog: outputs/phase_a/feature_catalog.csv
+  max_missing_rate: 0.70
+
+split:
+  test_size: 0.20
+  val_size: 0.10
+
+preprocessing:
+  numeric_impute: median
+  categorical_impute: most_frequent
+  add_missing_indicators: true
+  missing_indicator_variants: [false, true]
+
+models:
+  run: [logistic_regression, random_forest, hist_gradient_boosting]
+  logistic_regression:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+  random_forest:
+    n_estimators: 200
+    max_depth: null
+    class_weight: balanced
+  hist_gradient_boosting:
+    max_iter: 150
+    learning_rate: 0.05
+    max_leaf_nodes: 31
+

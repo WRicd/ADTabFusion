@@ -1,0 +1,24 @@
+{
+  "subjects": 1611,
+  "total_pairs": 19073,
+  "median_pairs_per_subject": 9.0,
+  "maximum_pairs_per_subject": 52,
+  "effective_weighted_sample_size": 1611.0,
+  "per_subject_weight_sum_min": 0.9999999999999999,
+  "per_subject_weight_sum_max": 1.0,
+  "future_diagnosis_distribution": {
+    "MCI": 8239,
+    "CN": 5849,
+    "AD": 4985
+  },
+  "forecast_months": {
+    "count": 19073.0,
+    "mean": 24.58843623725595,
+    "std": 14.35638183191979,
+    "min": 6.012320328542095,
+    "25%": 12.123203285420944,
+    "50%": 23.62217659137577,
+    "75%": 35.90965092402464,
+    "max": 59.9917864476386
+  }
+}

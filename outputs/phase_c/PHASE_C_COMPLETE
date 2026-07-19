@@ -1,0 +1,6 @@
+Phase C completed with D3 schema audit, frozen direct-transfer models,
+horizon-aware future-diagnosis modeling, D3/D4 external evaluation,
+subject-level bootstrap confidence intervals, and dataset-shift analysis.
+
+D4 was not used for training, preprocessing, feature selection, model
+selection, or deployment ordering.

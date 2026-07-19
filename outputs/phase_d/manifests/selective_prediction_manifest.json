@@ -1,0 +1,8 @@
+{
+  "threshold": 0.7430689328653002,
+  "selection_split": "D1/D2 validation subjects only",
+  "minimum_coverage": 0.7,
+  "selection_metric": "macro_f1",
+  "temporal_test_used_for_threshold_selection": false,
+  "d3_or_d4_used_for_threshold_selection": false
+}

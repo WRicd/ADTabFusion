@@ -4,7 +4,7 @@ project:
   output_dir: outputs
 
 data:
-  raw_csv: data/raw/tadpole/TADPOLE_D1_D2.csv
+  raw_csv: data/raw/TADPOLE_D1_D2.csv
   subject_col: RID
   visit_col: VISCODE
   label_col: DX
@@ -45,4 +45,3 @@ models:
 
 explainability:
   max_samples: 300
-

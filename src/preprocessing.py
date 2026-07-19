@@ -10,11 +10,18 @@ def build_preprocessor(
     numeric_features: list[str],
     categorical_features: list[str],
     impute_strategy: str = "median",
+    add_missing_indicators: bool = False,
 ) -> ColumnTransformer:
     """Build a train-fitted-only preprocessing transformer."""
     numeric_pipe = Pipeline(
         steps=[
-            ("imputer", SimpleImputer(strategy=impute_strategy)),
+            (
+                "imputer",
+                SimpleImputer(
+                    strategy=impute_strategy,
+                    add_indicator=add_missing_indicators,
+                ),
+            ),
             ("scaler", StandardScaler()),
         ]
     )
@@ -32,4 +39,3 @@ def build_preprocessor(
         remainder="drop",
         verbose_feature_names_out=False,
     )
-

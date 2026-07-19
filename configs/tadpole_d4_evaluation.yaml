@@ -1,0 +1,23 @@
+project:
+  name: AD-TabFusion TADPOLE D4 External Evaluation
+  output_dir: outputs
+
+data:
+  d3_csv: data/tadpole_challenge/TADPOLE_D3.csv
+  d4_csv: data/tadpole_challenge/TADPOLE_D4_corr.csv
+  subject_col: RID
+  d3_date_col: EXAMDATE
+  d4_date_columns: [CognitiveAssessmentDate, ScanDate]
+
+paths:
+  predictions: outputs/predictions/tadpole_d3_predictions.csv
+  metrics: outputs/metrics/tadpole_d4_external_metrics.json
+  match_table: outputs/metrics/tadpole_d3_d4_match_table.csv
+  report: outputs/reports/tadpole_d4_external_evaluation.md
+
+evaluation:
+  targets: [Diagnosis, ADAS13, Ventricles]
+  intersection_only: true
+  preserve_multiple_d4_records: true
+  forbid_training_data_access: true
+

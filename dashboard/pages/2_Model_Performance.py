@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard_utils import (
+from dashboard.dashboard_utils import (
     OUTPUT_DIR,
     image_path,
     language_selector,

@@ -1,0 +1,39 @@
+project:
+  name: AD-TabFusion Full TADPOLE Internal
+  seed_list: [42, 43, 44, 45, 46]
+  output_dir: outputs
+
+data:
+  raw_csv: data/tadpole_challenge/TADPOLE_D1_D2.csv
+  dictionary_csv: data/tadpole_challenge/TADPOLE_D1_D2_Dict.csv
+  d3_csv: data/tadpole_challenge/TADPOLE_D3.csv
+  subject_col: RID
+  visit_col: VISCODE
+  date_col: EXAMDATE
+  label_col: DX
+  task: diagnosis_multiclass
+  task_mode: all_visits
+
+feature_selection:
+  max_missing_rate: 0.70
+  min_non_missing_count: 100
+  max_features_per_family: 1
+  max_primary_features: 200
+
+split:
+  test_size: 0.20
+  val_size: 0.10
+
+preprocessing:
+  numeric_impute: median
+  categorical_impute: most_frequent
+
+models:
+  run: [logistic_regression, random_forest, hist_gradient_boosting]
+
+paths:
+  feature_catalog: outputs/metrics/tadpole_full_feature_catalog.csv
+  feature_blacklist: outputs/metrics/tadpole_full_feature_blacklist.json
+  feature_whitelist: outputs/metrics/tadpole_full_feature_whitelist.json
+  leakage_report: docs/tadpole_full_leakage_audit.md
+

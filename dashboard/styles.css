@@ -1,0 +1,236 @@
+:root {
+  --ad-navy: #16324f;
+  --ad-blue: #2f6b9a;
+  --ad-teal: #168c8c;
+  --ad-green: #2e8b67;
+  --ad-amber: #c78321;
+  --ad-red: #b84a4a;
+  --ad-ink: #17212b;
+  --ad-muted: #5f6b76;
+  --ad-border: #d9e2ea;
+  --ad-surface: #f6f8fa;
+}
+
+html, body, [class*="st-"] {
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+.stApp {
+  background: #ffffff;
+  color: var(--ad-ink);
+}
+
+[data-testid="stSidebar"] {
+  background: #f6f8fa;
+  border-right: 1px solid var(--ad-border);
+}
+
+[data-testid="stHeader"] {
+  display: none;
+}
+
+[data-testid="stSidebarNav"] a,
+[data-testid="stSidebarNav"] a span {
+  color: var(--ad-ink) !important;
+}
+
+[data-testid="stSidebarNav"] a[aria-current="page"] {
+  background: #e4edf4 !important;
+}
+
+[data-baseweb="select"] > div {
+  background: #ffffff !important;
+  border-color: var(--ad-border) !important;
+  color: var(--ad-ink) !important;
+}
+
+[data-baseweb="select"] svg {
+  fill: var(--ad-muted) !important;
+}
+
+[data-testid="stSidebarNav"] span,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p {
+  font-size: 0.88rem;
+}
+
+.block-container {
+  max-width: 1220px;
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+}
+
+h1, h2, h3 {
+  color: var(--ad-navy);
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 2rem !important;
+  line-height: 1.2 !important;
+  margin-bottom: 0.35rem !important;
+}
+
+h2 {
+  font-size: 1.28rem !important;
+  margin-top: 1.4rem !important;
+}
+
+.ad-kicker {
+  color: var(--ad-teal);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.ad-subtitle {
+  color: var(--ad-muted);
+  font-size: 1rem;
+  max-width: 900px;
+  margin: 0 0 1.4rem 0;
+}
+
+.ad-section {
+  border-top: 1px solid var(--ad-border);
+  margin-top: 1.65rem;
+  padding-top: 1.1rem;
+}
+
+.ad-section h2 {
+  margin: 0 !important;
+}
+
+.ad-section p {
+  color: var(--ad-muted);
+  margin: 0.25rem 0 0 0;
+}
+
+.ad-metric-card {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-top: 3px solid var(--ad-blue);
+  border-radius: 8px;
+  min-height: 116px;
+  padding: 14px 16px;
+}
+
+.ad-metric-label {
+  color: var(--ad-muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.25;
+  min-height: 2rem;
+}
+
+.ad-metric-value {
+  color: var(--ad-navy);
+  font-size: 1.65rem;
+  font-weight: 720;
+  line-height: 1.15;
+  margin-top: 4px;
+}
+
+.ad-metric-note {
+  color: var(--ad-muted);
+  font-size: 0.72rem;
+  margin-top: 5px;
+}
+
+.ad-badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 9px;
+}
+
+.ad-badge-success { background: #e7f4ed; color: #216849; }
+.ad-badge-warning { background: #fff3dc; color: #85550f; }
+.ad-badge-info { background: #e7f0f7; color: #254f70; }
+
+.ad-banner {
+  border-left: 4px solid var(--ad-amber);
+  background: #fff8eb;
+  border-radius: 6px;
+  color: #65430e;
+  margin: 0.9rem 0;
+  padding: 11px 14px;
+}
+
+.ad-banner-danger {
+  border-left-color: var(--ad-red);
+  background: #fff1f1;
+  color: #7a2f2f;
+}
+
+.ad-interpretation {
+  background: #edf7f6;
+  border-left: 4px solid var(--ad-teal);
+  border-radius: 6px;
+  color: #234f50;
+  margin: 0.9rem 0;
+  padding: 11px 14px;
+}
+
+.ad-chart-title {
+  color: var(--ad-navy);
+  font-size: 0.96rem;
+  font-weight: 700;
+  margin-top: 0.55rem;
+}
+
+.ad-chart-caption {
+  color: var(--ad-muted);
+  font-size: 0.76rem;
+  margin-bottom: 0.5rem;
+}
+
+.ad-empty {
+  background: var(--ad-surface);
+  border: 1px dashed #aebbc6;
+  border-radius: 8px;
+  color: var(--ad-muted);
+  padding: 18px;
+}
+
+.ad-method-flow {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0.8rem 0 1.2rem 0;
+}
+
+.ad-method-step {
+  background: #f6f8fa;
+  border: 1px solid var(--ad-border);
+  border-radius: 8px;
+  color: var(--ad-navy);
+  font-size: 0.78rem;
+  font-weight: 650;
+  min-height: 62px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+div[data-testid="stDataFrame"] {
+  border: 1px solid var(--ad-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+div[data-testid="stVegaLiteChart"] {
+  background: #ffffff !important;
+}
+
+div[data-testid="stVegaLiteChart"] canvas,
+div[data-testid="stVegaLiteChart"] svg {
+  background: #ffffff !important;
+}
+
+@media (max-width: 800px) {
+  .block-container { padding-top: 1.2rem; }
+  .ad-method-flow { grid-template-columns: 1fr 1fr; }
+  .ad-metric-value { font-size: 1.35rem; }
+}

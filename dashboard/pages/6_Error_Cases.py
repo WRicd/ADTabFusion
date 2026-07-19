@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard_utils import OUTPUT_DIR, language_selector, read_csv, show_dataframe_or_warning, tr
+from dashboard.dashboard_utils import OUTPUT_DIR, language_selector, read_csv, show_dataframe_or_warning, tr
 
 
 lang = language_selector()

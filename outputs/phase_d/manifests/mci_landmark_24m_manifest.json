@@ -1,0 +1,28 @@
+{
+  "model_id": "phase_d_mci_24m_logistic_regression",
+  "model_name": "logistic_regression",
+  "horizon_months": 24,
+  "tolerance_months": 6,
+  "feature_order": [
+    "AGE",
+    "PTGENDER",
+    "PTEDUCAT",
+    "PTETHCAT",
+    "PTRACCAT",
+    "PTMARRY",
+    "MMSE",
+    "ADAS13",
+    "Ventricles",
+    "Hippocampus",
+    "WholeBrain",
+    "Entorhinal",
+    "Fusiform",
+    "MidTemp",
+    "ICV"
+  ],
+  "training_subject_count": 626,
+  "censoring_rule": "negative requires follow-up through horizon minus tolerance",
+  "calibration_data": null,
+  "d4_used_for_selection": false,
+  "model_sha256": "39c77c6bac5e1f145224a8e4291765f3baa9985a2380a03c5ff05ad249c991d8"
+}

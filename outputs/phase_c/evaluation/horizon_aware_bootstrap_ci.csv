@@ -1,0 +1,7 @@
+model_id,scope,metric,estimate,ci_lower,ci_upper,valid_repetitions,bootstrap_unit
+phase_c_horizon_aware_random_forest,first_follow_up,accuracy,0.5786802030456852,0.5076142131979695,0.6446700507614214,1000,subject
+phase_c_horizon_aware_random_forest,first_follow_up,balanced_accuracy,0.5502189381499726,0.47209968192838386,0.6292218001993674,1000,subject
+phase_c_horizon_aware_random_forest,first_follow_up,macro_f1,0.5476096706180091,0.46658825398741094,0.6242135946894595,1000,subject
+phase_c_horizon_aware_random_forest,first_follow_up,roc_auc_ovr,0.7341451482434088,0.6781068128459413,0.7862029346918107,1000,subject
+phase_c_horizon_aware_random_forest,first_follow_up,log_loss,0.9486216350568084,0.8963715911336938,1.009909578488357,1000,subject
+phase_c_horizon_aware_random_forest,first_follow_up,brier_score,0.5679738578680202,0.5356322081218274,0.6022029631979695,1000,subject

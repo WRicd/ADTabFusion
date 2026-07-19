@@ -1,0 +1,66 @@
+{
+  "frozen_at_utc": "2026-07-19T15:46:14.903155+00:00",
+  "d4_used_for_decisions": false,
+  "artifacts": [
+    {
+      "path": "outputs/phase_d/models/calibrated_transition_pipeline.joblib",
+      "sha256": "7b87af3a2bae08539aa97823ac4e7f2d84746bdd6aa80c17e75f249caf8ca053"
+    },
+    {
+      "path": "outputs/phase_d/models/mci_discrete_time_pipeline.joblib",
+      "sha256": "b170de26b93c94aa13203c34bdcad4ccb6b22d6302c85d9f6e51b5ca53bd63a2"
+    },
+    {
+      "path": "outputs/phase_d/models/mci_landmark_12m_pipeline.joblib",
+      "sha256": "74cdce104d42e70e9fdcbc054543b5ba1be6bdc32cf67b4751cb13fcf934f066"
+    },
+    {
+      "path": "outputs/phase_d/models/mci_landmark_24m_pipeline.joblib",
+      "sha256": "39c77c6bac5e1f145224a8e4291765f3baa9985a2380a03c5ff05ad249c991d8"
+    },
+    {
+      "path": "outputs/phase_d/models/mci_landmark_36m_pipeline.joblib",
+      "sha256": "89af9a158c740a7550bcb5844fd8d9abf729cb4911f19b5e0689e4d29a84e655"
+    },
+    {
+      "path": "outputs/phase_d/models/mci_landmark_48m_pipeline.joblib",
+      "sha256": "2d390f1257dc8aa846fd11b2469251323da9a4b998412f5bcddba16423e4501e"
+    },
+    {
+      "path": "outputs/phase_d/models/transition_aware_pipeline.joblib",
+      "sha256": "f3ba1c94ec35ea61c1fa9291ce41eb4a29e43c6d24b2734f5f68a4b4f4a0a605"
+    },
+    {
+      "path": "outputs/phase_d/manifests/calibrated_transition_manifest.json",
+      "sha256": "e63b89e9c296fdad725b558e9f84585e28053aee897679dadff2f9fa123166c8"
+    },
+    {
+      "path": "outputs/phase_d/manifests/mci_discrete_time_manifest.json",
+      "sha256": "aa7ba6778fb70905eee227eb1ab2641e1db4d276414887d3e9029bb106256953"
+    },
+    {
+      "path": "outputs/phase_d/manifests/mci_landmark_12m_manifest.json",
+      "sha256": "8f5a0519325ac41436ef2f840a2cec2ecbc758e56b3590317d66827684a7de8e"
+    },
+    {
+      "path": "outputs/phase_d/manifests/mci_landmark_24m_manifest.json",
+      "sha256": "4bad501378f1c561b14c7d79e701411d349d417bef00874599b4b746cbdd0598"
+    },
+    {
+      "path": "outputs/phase_d/manifests/mci_landmark_36m_manifest.json",
+      "sha256": "c2d9b0d510d06b09485a6169f516a614c661e4e04891c370e3adb09643dd9c29"
+    },
+    {
+      "path": "outputs/phase_d/manifests/mci_landmark_48m_manifest.json",
+      "sha256": "8628d42c794170df311cd831bf718674b851fbbe7c342ef69381b962f82b486d"
+    },
+    {
+      "path": "outputs/phase_d/manifests/selective_prediction_manifest.json",
+      "sha256": "a2e3996de14027822c2db34da708eb1690f20d1c2188ec4184acd2a60b2b9374"
+    },
+    {
+      "path": "outputs/phase_d/manifests/transition_aware_manifest.json",
+      "sha256": "018df391adcaa8a42bf5166cae5d08bca2ab0a716cf4811baaf512cd8a00b8bc"
+    }
+  ]
+}

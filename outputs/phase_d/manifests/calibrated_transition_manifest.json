@@ -1,0 +1,30 @@
+{
+  "model_id": "phase_d_calibrated_transition_isotonic",
+  "calibration_method": "isotonic",
+  "feature_order": [
+    "AGE",
+    "PTGENDER",
+    "PTEDUCAT",
+    "PTETHCAT",
+    "PTRACCAT",
+    "PTMARRY",
+    "MMSE",
+    "ADAS13",
+    "Ventricles",
+    "Hippocampus",
+    "WholeBrain",
+    "Entorhinal",
+    "Fusiform",
+    "MidTemp",
+    "ICV",
+    "SOURCE_DX",
+    "forecast_months"
+  ],
+  "calibration_split": "D1/D2 validation subjects only",
+  "calibration_subject_count": 236,
+  "calibration_subject_rid_sha256": "bcb726b318ad759d5617d0c79e9d66639a1e421bddaf560e715029d6290a0b44",
+  "base_model_sha256": "f3ba1c94ec35ea61c1fa9291ce41eb4a29e43c6d24b2734f5f68a4b4f4a0a605",
+  "calibrated_model_sha256": "7b87af3a2bae08539aa97823ac4e7f2d84746bdd6aa80c17e75f249caf8ca053",
+  "temporal_test_used_for_calibration_or_selection": false,
+  "d3_or_d4_used_for_calibration_or_selection": false
+}

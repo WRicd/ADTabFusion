@@ -1,0 +1,47 @@
+project:
+  name: AD-TabFusion Full TADPOLE Modality Ablation
+  phase: phase_b
+  seed_list: [42, 43, 44, 45, 46]
+  output_dir: outputs/phase_b
+
+data:
+  raw_csv: data/tadpole_challenge/TADPOLE_D1_D2.csv
+  subject_col: RID
+  visit_col: VISCODE
+  date_col: EXAMDATE
+  label_col: DX
+  task_mode: baseline_only
+  feature_whitelist: outputs/phase_a/primary_whitelist.json
+  feature_catalog: outputs/phase_a/feature_catalog.csv
+  max_missing_rate: 0.70
+
+split:
+  test_size: 0.20
+  val_size: 0.10
+
+preprocessing:
+  numeric_impute: median
+  add_missing_indicators: true
+
+models:
+  logistic_regression:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+
+ablation:
+  model: logistic_regression
+  groups:
+    demographic_only: [demographic]
+    cognitive_only: [cognitive]
+    mri_structural_only: [mri_structural]
+    pet_only: [pet]
+    genetic_only: [genetic]
+    demographic_cognitive: [demographic, cognitive]
+    clinical_mri: [demographic, cognitive, mri_structural]
+    clinical_mri_genetic: [demographic, cognitive, mri_structural, genetic]
+    all_primary_modalities: [demographic, cognitive, mri_structural, pet, genetic]
+    all_without_cognitive: [demographic, mri_structural, pet, genetic]
+    all_without_mri_structural: [demographic, cognitive, pet, genetic]
+    all_without_pet: [demographic, cognitive, mri_structural, genetic]
+    all_without_genetic: [demographic, cognitive, mri_structural, pet]

@@ -1,0 +1,5 @@
+project: {phase: phase_d, output_dir: outputs/phase_d, random_state: 42}
+transition_config: configs/phase_d_transition_model.yaml
+methods: [uncalibrated, sigmoid, isotonic]
+ece_bins: 10
+selection_metrics: [log_loss, brier_score]

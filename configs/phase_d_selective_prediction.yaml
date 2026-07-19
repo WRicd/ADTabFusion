@@ -1,0 +1,6 @@
+project: {phase: phase_d, output_dir: outputs/phase_d, random_state: 42}
+transition_config: configs/phase_d_transition_model.yaml
+coverages: [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+threshold_selection:
+  minimum_coverage: 0.70
+  metric: macro_f1

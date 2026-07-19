@@ -1,0 +1,28 @@
+project:
+  phase: phase_c
+  output_dir: outputs/phase_c
+  random_state: 42
+
+data:
+  d3_csv: data/tadpole_challenge/TADPOLE_D3.csv
+  d4_csv: data/tadpole_challenge/TADPOLE_D4_corr.csv
+  subject_col: RID
+  d3_date_col: EXAMDATE
+  d4_date_col: ScanDate
+  d4_label_col: Diagnosis
+  horizon_manifest: outputs/phase_c/manifests/horizon_aware_manifest.json
+  direct_primary_predictions: outputs/phase_c/predictions/d3_direct_primary.csv
+  direct_sensitivity_predictions: outputs/phase_c/predictions/d3_direct_sensitivity.csv
+
+bootstrap:
+  unit: subject
+  repetitions: 1000
+  confidence_level: 0.95
+  seed: 42
+
+horizons:
+  - {name: 0-12 months, min: 0, max: 12}
+  - {name: 12-24 months, min: 12, max: 24}
+  - {name: 24-36 months, min: 24, max: 36}
+  - {name: '>36 months', min: 36, max: null}
+minimum_stable_rows: 20

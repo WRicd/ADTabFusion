@@ -1,0 +1,6 @@
+Phase D completed successfully.
+
+Primary result: locked D1/D2 temporal-test Macro F1 = 0.881.
+Calibrated temporal-test Log Loss = 0.352.
+Selective temporal-test Macro F1 = 0.926 at 81.1% coverage.
+D4 outputs are exploratory post-hoc replay only.

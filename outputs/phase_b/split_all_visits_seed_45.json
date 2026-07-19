@@ -1,0 +1,29 @@
+{
+  "train": {
+    "subjects": 1211,
+    "visits": 6272,
+    "label_distribution": {
+      "MCI": 2894,
+      "CN": 1879,
+      "AD": 1499
+    }
+  },
+  "val": {
+    "subjects": 173,
+    "visits": 876,
+    "label_distribution": {
+      "MCI": 381,
+      "CN": 289,
+      "AD": 206
+    }
+  },
+  "test": {
+    "subjects": 346,
+    "visits": 1756,
+    "label_distribution": {
+      "MCI": 777,
+      "CN": 577,
+      "AD": 402
+    }
+  }
+}

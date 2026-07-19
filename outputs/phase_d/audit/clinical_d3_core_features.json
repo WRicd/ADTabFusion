@@ -1,0 +1,17 @@
+[
+  "AGE",
+  "PTGENDER",
+  "PTEDUCAT",
+  "PTETHCAT",
+  "PTRACCAT",
+  "PTMARRY",
+  "MMSE",
+  "ADAS13",
+  "Ventricles",
+  "Hippocampus",
+  "WholeBrain",
+  "Entorhinal",
+  "Fusiform",
+  "MidTemp",
+  "ICV"
+]

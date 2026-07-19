@@ -1,0 +1,32 @@
+{
+  "model_id": "phase_d_mci_discrete_logistic_regression",
+  "model_name": "logistic_regression",
+  "feature_order": [
+    "AGE",
+    "PTGENDER",
+    "PTEDUCAT",
+    "PTETHCAT",
+    "PTRACCAT",
+    "PTMARRY",
+    "MMSE",
+    "ADAS13",
+    "Ventricles",
+    "Hippocampus",
+    "WholeBrain",
+    "Entorhinal",
+    "Fusiform",
+    "MidTemp",
+    "ICV",
+    "interval_index",
+    "elapsed_months"
+  ],
+  "interval_ends_months": [
+    12,
+    24,
+    36,
+    48,
+    60
+  ],
+  "d4_used_for_selection": false,
+  "model_sha256": "b170de26b93c94aa13203c34bdcad4ccb6b22d6302c85d9f6e51b5ca53bd63a2"
+}

@@ -1,0 +1,9 @@
+{
+  "training_effect_good": true,
+  "criteria": {
+    "transition_temporal_macro_f1_at_least_0_80": true,
+    "calibrated_temporal_log_loss_not_worse": true,
+    "mci_24_and_36_month_results_present": true,
+    "selective_macro_f1_not_worse": true
+  }
+}

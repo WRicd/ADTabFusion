@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.config import ensure_output_dirs, load_config
 from src.training import run_ablation
+from src.tadpole.phase_b_experiments import run_phase_b_ablation
 
 
 def main() -> None:
@@ -17,7 +18,11 @@ def main() -> None:
     args = parser.parse_args()
     config = load_config(args.config)
     ensure_output_dirs(config["project"].get("output_dir", "outputs"))
-    print(run_ablation(config, quick=args.quick).to_string(index=False))
+    if config.get("project", {}).get("phase") == "phase_b":
+        result = run_phase_b_ablation(config, quick=args.quick)
+    else:
+        result = run_ablation(config, quick=args.quick)
+    print(result.to_string(index=False))
 
 
 if __name__ == "__main__":

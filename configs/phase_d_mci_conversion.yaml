@@ -1,0 +1,17 @@
+project: {phase: phase_d, output_dir: outputs/phase_d, random_state: 42}
+data:
+  train_csv: data/tadpole_challenge/TADPOLE_D1_D2.csv
+  feature_profile: outputs/phase_d/audit/clinical_d3_core_features.json
+  temporal_split: outputs/phase_d/cohorts/temporal_split_manifest.json
+  subject_col: RID
+  date_col: EXAMDATE
+  label_col: DX
+landmarks:
+  horizons: [12, 24, 36, 48]
+  tolerance_months: 6
+models:
+  run: [logistic_regression, random_forest, hist_gradient_boosting]
+  logistic_regression: {C: 1.0, max_iter: 2000, class_weight: balanced, random_state: 42}
+  random_forest: {n_estimators: 300, max_depth: null, class_weight: balanced, random_state: 42}
+  hist_gradient_boosting: {max_iter: 200, learning_rate: 0.05, max_leaf_nodes: 31, random_state: 42}
+preprocessing: {numeric_impute: median, add_missing_indicators: true}

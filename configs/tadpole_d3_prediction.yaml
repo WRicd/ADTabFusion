@@ -1,0 +1,20 @@
+project:
+  name: AD-TabFusion TADPOLE D3 Prediction
+  output_dir: outputs
+
+data:
+  d3_csv: data/tadpole_challenge/TADPOLE_D3.csv
+  subject_col: RID
+  date_col: EXAMDATE
+
+paths:
+  feature_whitelist: outputs/metrics/tadpole_full_feature_whitelist.json
+  model: outputs/models/tadpole_full_best_model.joblib
+  preprocessor: outputs/models/tadpole_full_preprocessor.joblib
+  predictions: outputs/predictions/tadpole_d3_predictions.csv
+
+inference:
+  transform_only: true
+  allow_missing_features: true
+  forbid_fit: true
+

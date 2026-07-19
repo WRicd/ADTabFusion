@@ -10,7 +10,13 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 
 
-def fit_model(model_name: str, X_train, y_train, config: dict[str, Any]) -> Any:
+def fit_model(
+    model_name: str,
+    X_train,
+    y_train,
+    config: dict[str, Any],
+    sample_weight=None,
+) -> Any:
     """Fit a supported sklearn model."""
     model_config = config.get(model_name, {}) if config else {}
     if model_name == "logistic_regression":
@@ -72,7 +78,10 @@ def fit_model(model_name: str, X_train, y_train, config: dict[str, Any]) -> Any:
         )
     else:
         raise ValueError(f"Unsupported model: {model_name}")
-    model.fit(X_train, y_train)
+    if sample_weight is None:
+        model.fit(X_train, y_train)
+    else:
+        model.fit(X_train, y_train, sample_weight=sample_weight)
     return model
 
 

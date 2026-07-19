@@ -1,0 +1,44 @@
+project:
+  phase: phase_c
+  output_dir: outputs/phase_c
+  random_state: 42
+
+data:
+  train_csv: data/tadpole_challenge/TADPOLE_D1_D2.csv
+  d3_csv: data/tadpole_challenge/TADPOLE_D3.csv
+  whitelist: outputs/phase_a/primary_whitelist.json
+  feature_catalog: outputs/phase_a/feature_catalog.csv
+  feature_source_manifest: outputs/phase_c/manifests/primary_model_manifest.json
+  subject_col: RID
+  date_col: EXAMDATE
+  label_col: DX
+
+pairing:
+  min_horizon_months: 6
+  max_horizon_months: 60
+
+split:
+  train_size: 0.70
+  val_size: 0.10
+  test_size: 0.20
+
+preprocessing:
+  numeric_impute: median
+  add_missing_indicators: true
+
+models:
+  run: [hist_gradient_boosting, logistic_regression, random_forest]
+  logistic_regression:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+  random_forest:
+    n_estimators: 200
+    max_depth: null
+    class_weight: balanced
+    random_state: 42
+  hist_gradient_boosting:
+    max_iter: 150
+    learning_rate: 0.05
+    max_leaf_nodes: 31
+    random_state: 42

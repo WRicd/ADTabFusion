@@ -1,0 +1,15 @@
+project:
+  phase: phase_d
+  output_dir: outputs/phase_d
+  random_state: 42
+
+data:
+  train_csv: data/tadpole_challenge/TADPOLE_D1_D2.csv
+  d3_csv: data/tadpole_challenge/TADPOLE_D3.csv
+  whitelist: outputs/phase_a/primary_whitelist.json
+  feature_catalog: outputs/phase_a/feature_catalog.csv
+  compact_config: configs/tadpole_compact_comparison.yaml
+  subject_col: RID
+  date_col: EXAMDATE
+  visit_col: VISCODE
+  label_col: DX
