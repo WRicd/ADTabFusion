@@ -5,7 +5,6 @@ import json
 import sys
 from pathlib import Path
 
-import joblib
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +15,7 @@ from src.config import load_config
 from src.external.bootstrap import subject_bootstrap_ci
 from src.external.external_evaluation import CLASS_TO_ID, evaluate_external_predictions, first_follow_up
 from src.external.inference import probability_frame
+from src.external.model_freezing import load_verified_pipeline
 from src.external.schema_alignment import align_to_frozen_schema
 
 
@@ -27,7 +27,7 @@ def main() -> None:
     root = Path(config["project"]["output_dir"])
     frame = pd.read_csv(root / "evaluation" / "d3_d4_matched_rows.csv", low_memory=False)
     manifest = json.loads((root / "manifests" / "horizon_aware_manifest.json").read_text(encoding="utf-8"))
-    model = joblib.load(root / "models" / "horizon_aware_pipeline.joblib")
+    model = load_verified_pipeline(root / "models" / "horizon_aware_pipeline.joblib", manifest["model_sha256"])
     aligned = align_to_frozen_schema(frame, manifest["feature_order"])
     predicted = probability_frame(model.predict_proba(aligned))
     predicted.insert(0, "forecast_months", frame["forecast_months"].to_numpy())

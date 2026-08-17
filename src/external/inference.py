@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import joblib
 import numpy as np
 import pandas as pd
 
+from src.external.model_freezing import load_verified_pipeline
 from src.external.schema_alignment import align_to_frozen_schema
 
 CLASS_NAMES = np.array(["CN", "MCI", "AD"])
@@ -41,7 +41,7 @@ def predict_with_frozen_pipeline(
     features = manifest["feature_order"]
     missing = [feature for feature in features if feature not in frame.columns]
     aligned = align_to_frozen_schema(frame, features)
-    pipeline = joblib.load(model_path)
+    pipeline = load_verified_pipeline(model_path, manifest["model_sha256"])
     probabilities = pipeline.predict_proba(aligned)
     result = probability_frame(probabilities)
     result["model_id"] = manifest["model_id"]

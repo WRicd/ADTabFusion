@@ -4,14 +4,13 @@ import json
 from pathlib import Path
 from typing import Any
 
-import joblib
 import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp
 
 from src.external.d3_cohort import select_d3_index_records
 from src.external.inference import probability_frame
-from src.external.model_freezing import load_baseline_training_cohort
+from src.external.model_freezing import load_baseline_training_cohort, load_verified_pipeline
 from src.external.schema_alignment import align_to_frozen_schema
 
 
@@ -92,7 +91,7 @@ def analyze_d1d2_d3_shift(config: dict[str, Any]) -> pd.DataFrame:
                 }
             )
         rows.append(base)
-    pipeline = joblib.load(output / "models" / "primary_pipeline.joblib")
+    pipeline = load_verified_pipeline(output / "models" / "primary_pipeline.joblib", manifest["model_sha256"])
     for cohort_name, frame in (("D1_D2_training", train[features]), ("D3", d3_aligned)):
         prediction = probability_frame(pipeline.predict_proba(frame))
         rows.append(
