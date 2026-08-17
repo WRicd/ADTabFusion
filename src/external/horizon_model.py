@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import platform
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -13,7 +12,7 @@ import sklearn
 from sklearn.pipeline import Pipeline
 
 from src.evaluation import compute_metrics
-from src.external.model_freezing import sha256_file, stable_subject_hash
+from src.external.model_freezing import git_commit_hash, sha256_file, stable_subject_hash
 from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model
 from src.preprocessing import build_preprocessor
@@ -67,10 +66,7 @@ def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Pa
     manifest_dir.mkdir(parents=True, exist_ok=True)
     model_path = model_dir / "horizon_aware_pipeline.joblib"
     joblib.dump(final_pipeline, model_path)
-    try:
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = None
+    commit = git_commit_hash()
     manifest = {
         "model_id": f"phase_c_horizon_aware_{selected_name}",
         "model_name": selected_name,

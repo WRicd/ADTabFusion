@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any, Iterable
@@ -19,6 +20,8 @@ from src.evaluation import compute_metrics
 from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model, predict_model, predict_proba_model
 from src.preprocessing import build_preprocessor
+
+LOGGER = logging.getLogger(__name__)
 
 FORBIDDEN_FEATURES = {"RID", "DX", "DXCHANGE", "VISCODE"}
 SPARSE_MODALITIES = {"mri_dti", "csf", "pet_other"}
@@ -329,6 +332,7 @@ def run_primary_baselines(config: dict[str, Any], quick: bool = False) -> pd.Dat
                         bool(add_indicators),
                     )
                 except ImportError as exc:
+                    LOGGER.warning("Skipping model '%s' (seed %s): %s", model_name, seed, exc)
                     rows.append({"model": model_name, "seed": seed, "skipped": str(exc)})
                     continue
                 rows.append(_csv_safe_metrics(metrics))
@@ -452,7 +456,8 @@ def write_phase_b_explainability(
 def _safe_split(ids, labels, size: float, seed: int):
     try:
         return train_test_split(ids, test_size=size, random_state=seed, stratify=labels)
-    except ValueError:
+    except ValueError as exc:
+        LOGGER.warning("Falling back to a non-stratified split (seed %s): %s", seed, exc)
         return train_test_split(ids, test_size=size, random_state=seed, stratify=None)
 
 
@@ -535,7 +540,8 @@ def _plot_importance(frame: pd.DataFrame, label: str, path: Path) -> None:
 
         matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
-    except ImportError:
+    except ImportError as exc:
+        LOGGER.warning("matplotlib is not installed — skipping figure %s (%s).", path, exc)
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     plot = frame.iloc[::-1]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,8 @@ from src.tadpole.phase_b import (
     select_baseline_records,
     summarize_results,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 def load_compact_cohort(config: dict[str, Any]) -> tuple[pd.DataFrame, list[str]]:
@@ -353,7 +356,8 @@ def _plot_grouped(frame: pd.DataFrame, x: str, y: str, path: Path) -> None:
 
         matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
-    except ImportError:
+    except ImportError as exc:
+        LOGGER.warning("matplotlib is not installed — skipping figure %s (%s).", path, exc)
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(12, 5))

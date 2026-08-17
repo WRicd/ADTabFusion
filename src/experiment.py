@@ -76,8 +76,8 @@ def end_run(status: str = "FINISHED") -> None:
 
     try:
         mlflow.end_run(status=status)
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.warning("MLflow end_run failed (status=%s): %s", status, exc)
     _ACTIVE_RUN = None
 
 
@@ -207,8 +207,8 @@ class ExperimentContext:
             set_tags(self.tags)
         return self
 
-    def __exit__(self, *args: Any) -> None:
-        end_run()
+    def __exit__(self, exc_type: type[BaseException] | None, *args: Any) -> None:
+        end_run(status="FAILED" if exc_type is not None else "FINISHED")
 
     def log_metrics(self, metrics: dict[str, float], step: int | None = None) -> None:
         log_metrics(metrics, step=step)

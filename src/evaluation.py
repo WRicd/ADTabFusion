@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import numpy as np
@@ -13,6 +14,8 @@ from sklearn.metrics import (
     precision_recall_fscore_support,
     roc_auc_score,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 def compute_metrics(
@@ -36,13 +39,15 @@ def compute_metrics(
             else:
                 score = roc_auc_score(y_true, y_proba, multi_class="ovr", average="macro", labels=labels)
             result["roc_auc_ovr"] = float(score)
-        except ValueError:
+        except ValueError as exc:
+            LOGGER.warning("roc_auc_ovr is unavailable for this split: %s", exc)
             result["roc_auc_ovr"] = None
         try:
             result["log_loss"] = float(log_loss(y_true, y_proba, labels=labels))
             one_hot = np.eye(y_proba.shape[1])[np.asarray(y_true, dtype=int)]
             result["brier_score"] = float(np.mean(np.sum((y_proba - one_hot) ** 2, axis=1)))
-        except (ValueError, IndexError):
+        except (ValueError, IndexError) as exc:
+            LOGGER.warning("log_loss and brier_score are unavailable for this split: %s", exc)
             result["log_loss"] = None
             result["brier_score"] = None
     else:

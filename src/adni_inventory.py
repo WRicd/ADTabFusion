@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import csv
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
+
+LOGGER = logging.getLogger(__name__)
 
 ID_CANDIDATES = ["RID", "PTID", "Subject", "SUBJECT", "LONIUID"]
 VISIT_CANDIDATES = [
@@ -210,6 +213,7 @@ def inspect_csv(path: str | Path) -> dict:
     try:
         sample, encoding = _read_sample(csv_path)
     except Exception as exc:  # A bad file must not stop the inventory.
+        LOGGER.warning("Could not read %s (%s: %s) — recording it as failed.", csv_path, type(exc).__name__, exc)
         return _failed_record(csv_path, exc)
 
     columns = [str(column) for column in sample.columns]
@@ -230,6 +234,12 @@ def inspect_csv(path: str | Path) -> dict:
         read_status = "ok"
         read_error = None
     except Exception as exc:
+        LOGGER.warning(
+            "Row count for %s is incomplete (%s: %s) — recording it as partial.",
+            csv_path,
+            type(exc).__name__,
+            exc,
+        )
         rows = None
         read_status = "partial"
         read_error = type(exc).__name__
@@ -397,12 +407,15 @@ def next_download_recommendations(availability: dict) -> list[str]:
 
 
 def _read_sample(path: Path) -> tuple[pd.DataFrame, str]:
-    errors = []
-    for encoding in ("utf-8-sig", "utf-8", "latin-1"):
+    encodings = ("utf-8-sig", "utf-8", "latin-1")
+    errors: list[Exception] = []
+    for encoding in encodings:
         try:
             return pd.read_csv(path, nrows=50, encoding=encoding, low_memory=False), encoding
         except Exception as exc:
             errors.append(exc)
+    attempts = "; ".join(f"{encoding}: {type(exc).__name__}: {exc}" for encoding, exc in zip(encodings, errors))
+    LOGGER.warning("Could not read %s with any candidate encoding (%s).", path, attempts)
     raise errors[-1]
 
 

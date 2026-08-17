@@ -58,7 +58,12 @@ def run_shap_analysis(
         X_preprocessed = preprocessor.transform(X_test)
         preprocessed_feature_names = list(preprocessor.get_feature_names_out())
         X_background = X_preprocessed[: min(100, len(X_preprocessed))]
-    except Exception:
+    except Exception as exc:
+        LOGGER.warning(
+            "SHAP: preprocessor.transform failed (%s: %s) — explaining raw feature values instead.",
+            type(exc).__name__,
+            exc,
+        )
         X_preprocessed = X_test.values if hasattr(X_test, "values") else X_test
         preprocessed_feature_names = feature_names
         X_background = X_preprocessed[: min(100, len(X_preprocessed))]
@@ -72,7 +77,12 @@ def run_shap_analysis(
     )
     try:
         explainer = shap.TreeExplainer(estimator, data=X_background, feature_perturbation="interventional")
-    except Exception:
+    except Exception as exc:
+        LOGGER.warning(
+            "SHAP: interventional TreeExplainer unavailable (%s: %s) — falling back to tree_path_dependent.",
+            type(exc).__name__,
+            exc,
+        )
         explainer = shap.TreeExplainer(estimator)
 
     try:
@@ -261,7 +271,12 @@ def _native_importance(pipeline, original_features: list[str]) -> pd.DataFrame:
     preprocessor = pipeline.named_steps["preprocessor"]
     try:
         feature_names = list(preprocessor.get_feature_names_out())
-    except Exception:
+    except Exception as exc:
+        LOGGER.warning(
+            "Could not read transformed feature names (%s: %s) — using the original feature list.",
+            type(exc).__name__,
+            exc,
+        )
         feature_names = original_features
     if hasattr(estimator, "feature_importances_"):
         values = estimator.feature_importances_
@@ -300,7 +315,8 @@ def _plot_importance(df: pd.DataFrame, label_col: str, path: Path, title: str) -
 
         matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
-    except ImportError:
+    except ImportError as exc:
+        LOGGER.warning("matplotlib is not installed — skipping figure %s (%s).", path, exc)
         return
 
     plot_df = df.iloc[::-1]
