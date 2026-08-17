@@ -227,7 +227,7 @@ def render_modality_map_markdown(catalog: pd.DataFrame) -> str:
     for modality, group in catalog.groupby("modality", sort=True):
         eligible = group["recommended_use"].isin({"include_primary", "include_optional"}).sum()
         primary = (group["recommended_use"] == "include_primary").sum()
-        lines.append(f"| {modality} | {len(group)} | {group['missing_rate'].min():.3f} | " f"{eligible} | {primary} |")
+        lines.append(f"| {modality} | {len(group)} | {group['missing_rate'].min():.3f} | {eligible} | {primary} |")
     lines.extend(
         [
             "",

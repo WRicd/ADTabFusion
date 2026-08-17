@@ -13,4 +13,3 @@ sparse_cohort:
   modality: mri_dti
 paths:
   summary_report: outputs/phase_b/sparse_modalities/dti_cohort_summary.md
-

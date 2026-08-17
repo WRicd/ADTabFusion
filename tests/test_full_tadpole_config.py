@@ -25,4 +25,3 @@ def test_full_primary_config_uses_frozen_phase_a_whitelist():
     config = load_config("configs/tadpole_full_primary_baseline.yaml")
     assert config["data"]["feature_whitelist"] == "outputs/phase_a/primary_whitelist.json"
     assert config["data"]["max_missing_rate"] == 0.70
-

@@ -5,7 +5,8 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path: sys.path.insert(0, str(ROOT))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from src.config import load_config
 from src.phase_d.temporal_split import assert_subject_split_disjoint, build_temporal_subject_split, write_temporal_split
@@ -21,4 +22,5 @@ def main() -> None:
     print("Locked temporal split: " + ", ".join(f"{name}={len(ids)}" for name, ids in split.items()))
 
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()

@@ -17,4 +17,3 @@ def section_header(title: str, description: str = "") -> None:
         f'<div class="ad-section"><h2>{escape(title)}</h2>{description_html}</div>',
         unsafe_allow_html=True,
     )
-

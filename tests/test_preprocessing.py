@@ -12,4 +12,3 @@ def test_preprocessor_fits_train_only_shape():
     pre.fit(train)
     out = pre.transform(test)
     assert out.shape[0] == 1
-

@@ -63,31 +63,21 @@ def columns_for_modalities(
     return list(dict.fromkeys(columns))
 
 
-def write_used_feature_groups(
-    used_groups: dict[str, list[str]], output_dir: str | Path
-) -> None:
+def write_used_feature_groups(used_groups: dict[str, list[str]], output_dir: str | Path) -> None:
     """Persist the feature groups that were actually available."""
     metrics_dir = Path(output_dir) / "metrics"
     metrics_dir.mkdir(parents=True, exist_ok=True)
-    (metrics_dir / "used_feature_groups.json").write_text(
-        json.dumps(used_groups, indent=2), encoding="utf-8"
-    )
+    (metrics_dir / "used_feature_groups.json").write_text(json.dumps(used_groups, indent=2), encoding="utf-8")
     used_features = {
         "groups": used_groups,
         "features": list(dict.fromkeys(col for cols in used_groups.values() for col in cols)),
         "notes": {"FAQ_bl": "baseline-only FAQ covariate"},
     }
-    (metrics_dir / "used_features.json").write_text(
-        json.dumps(used_features, indent=2), encoding="utf-8"
-    )
+    (metrics_dir / "used_features.json").write_text(json.dumps(used_features, indent=2), encoding="utf-8")
 
 
-def infer_feature_types(
-    df: pd.DataFrame, feature_columns: list[str]
-) -> tuple[list[str], list[str]]:
+def infer_feature_types(df: pd.DataFrame, feature_columns: list[str]) -> tuple[list[str], list[str]]:
     """Split selected columns into numeric and categorical features."""
-    numeric = [
-        col for col in feature_columns if col in df.columns and pd.api.types.is_numeric_dtype(df[col])
-    ]
+    numeric = [col for col in feature_columns if col in df.columns and pd.api.types.is_numeric_dtype(df[col])]
     categorical = [col for col in feature_columns if col in df.columns and col not in numeric]
     return numeric, categorical

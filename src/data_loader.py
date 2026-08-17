@@ -39,9 +39,7 @@ def audit_dataframe(
 
     missing_rate = df.isna().mean().sort_values(ascending=False)
     label_distribution = (
-        df[label_col].fillna("<missing>").astype(str).value_counts().to_dict()
-        if label_col in df.columns
-        else {}
+        df[label_col].fillna("<missing>").astype(str).value_counts().to_dict() if label_col in df.columns else {}
     )
     duplicate_subject_visit = 0
     if subject_col in df.columns and visit_col in df.columns:
@@ -54,17 +52,11 @@ def audit_dataframe(
         "label_distribution": label_distribution,
         "numeric_columns": int(df.select_dtypes(include="number").shape[1]),
         "categorical_columns": int(df.select_dtypes(exclude="number").shape[1]),
-        "high_missing_columns": missing_rate[
-            missing_rate > high_missing_threshold
-        ].index.tolist(),
-        "missing_rate_by_column": {
-            col: float(rate) for col, rate in missing_rate.items()
-        },
+        "high_missing_columns": missing_rate[missing_rate > high_missing_threshold].index.tolist(),
+        "missing_rate_by_column": {col: float(rate) for col, rate in missing_rate.items()},
         "duplicate_subject_visit_rows": duplicate_subject_visit,
     }
-    (report_dir / "data_audit.json").write_text(
-        json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    (report_dir / "data_audit.json").write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
     _plot_missing_rate(missing_rate, figure_dir / "missing_rate_by_column.png")
     _plot_label_distribution(label_distribution, figure_dir / "label_distribution.png")
     return audit

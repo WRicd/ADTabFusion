@@ -30,9 +30,7 @@ def analyze_error_cases(
     else:
         errors["error_category"] = errors.apply(_error_category, axis=1)
     errors.to_csv(report_dir / "error_cases.csv", index=False)
-    confusion = (
-        df.groupby(["y_true", "y_pred"]).size().reset_index(name="count").sort_values("count", ascending=False)
-    )
+    confusion = df.groupby(["y_true", "y_pred"]).size().reset_index(name="count").sort_values("count", ascending=False)
     confusion.to_csv(report_dir / "error_confusion_summary.csv", index=False)
     category_counts = errors["error_category"].value_counts().to_dict()
     lines = [
@@ -75,7 +73,11 @@ def generate_report(output_path: str | Path = "outputs/reports/final_report.md")
     all_visits = _read_csv(metrics_dir / "baseline_results_summary_all_visits.csv")
     ablation = _read_csv(metrics_dir / "modality_ablation.csv")
     missing = _read_csv(metrics_dir / "missing_modality_results.csv")
-    leakage = (reports_dir / "leakage_check.md").read_text(encoding="utf-8") if (reports_dir / "leakage_check.md").exists() else "Leakage check has not been generated."
+    leakage = (
+        (reports_dir / "leakage_check.md").read_text(encoding="utf-8")
+        if (reports_dir / "leakage_check.md").exists()
+        else "Leakage check has not been generated."
+    )
     modality_importance = _read_csv(metrics_dir / "modality_importance_best_model.csv")
     inventory = _read_json(metrics_dir / "adni_file_inventory.json", [])
     availability = _read_json(metrics_dir / "adni_modality_availability.json", {})

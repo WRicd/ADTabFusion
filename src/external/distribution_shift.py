@@ -22,13 +22,18 @@ def analyze_d1d2_d3_shift(config: dict[str, Any]) -> pd.DataFrame:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     features = manifest["feature_order"]
     train = load_baseline_training_cohort(
-        data["train_csv"], features, data.get("subject_col", "RID"),
-        data.get("visit_col", "VISCODE"), data.get("date_col", "EXAMDATE"),
+        data["train_csv"],
+        features,
+        data.get("subject_col", "RID"),
+        data.get("visit_col", "VISCODE"),
+        data.get("date_col", "EXAMDATE"),
         data.get("label_col", "DX"),
     )
     required = list(dict.fromkeys([data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"), *features]))
     d3_raw = pd.read_csv(
-        data["d3_csv"], usecols=lambda column: column in required, low_memory=False,
+        data["d3_csv"],
+        usecols=lambda column: column in required,
+        low_memory=False,
         na_values=["", " ", "-4", "-4.0"],
     )
     d3, _ = select_d3_index_records(d3_raw, data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"))
@@ -52,14 +57,20 @@ def analyze_d1d2_d3_shift(config: dict[str, Any]) -> pd.DataFrame:
             right = d3_numeric.dropna().to_numpy(dtype=float)
             train_mean = float(np.mean(left)) if len(left) else None
             d3_mean = float(np.mean(right)) if len(right) else None
-            pooled = np.sqrt((np.var(left, ddof=1) + np.var(right, ddof=1)) / 2) if len(left) > 1 and len(right) > 1 else np.nan
+            pooled = (
+                np.sqrt((np.var(left, ddof=1) + np.var(right, ddof=1)) / 2)
+                if len(left) > 1 and len(right) > 1
+                else np.nan
+            )
             base.update(
                 {
                     "train_mean": train_mean,
                     "train_std": float(np.std(left, ddof=1)) if len(left) > 1 else None,
                     "d3_mean": d3_mean,
                     "d3_std": float(np.std(right, ddof=1)) if len(right) > 1 else None,
-                    "standardized_mean_difference": float((d3_mean - train_mean) / pooled) if pooled and np.isfinite(pooled) else None,
+                    "standardized_mean_difference": float((d3_mean - train_mean) / pooled)
+                    if pooled and np.isfinite(pooled)
+                    else None,
                     "ks_statistic": float(ks_2samp(left, right).statistic) if len(left) and len(right) else None,
                     "psi": _population_stability_index(left, right),
                     "unseen_categories": None,
@@ -70,8 +81,13 @@ def analyze_d1d2_d3_shift(config: dict[str, Any]) -> pd.DataFrame:
             unseen = sorted(set(d3_series.dropna().astype(str)) - known)
             base.update(
                 {
-                    "train_mean": None, "train_std": None, "d3_mean": None, "d3_std": None,
-                    "standardized_mean_difference": None, "ks_statistic": None, "psi": None,
+                    "train_mean": None,
+                    "train_std": None,
+                    "d3_mean": None,
+                    "d3_std": None,
+                    "standardized_mean_difference": None,
+                    "ks_statistic": None,
+                    "psi": None,
                     "unseen_categories": "|".join(unseen),
                 }
             )
@@ -81,15 +97,19 @@ def analyze_d1d2_d3_shift(config: dict[str, Any]) -> pd.DataFrame:
         prediction = probability_frame(pipeline.predict_proba(frame))
         rows.append(
             {
-                "feature": "prediction_confidence", "kind": "prediction_distribution",
-                "cohort": cohort_name, "train_mean": float(prediction["prediction_confidence"].mean()),
+                "feature": "prediction_confidence",
+                "kind": "prediction_distribution",
+                "cohort": cohort_name,
+                "train_mean": float(prediction["prediction_confidence"].mean()),
                 "train_std": float(prediction["prediction_confidence"].std()),
             }
         )
         rows.append(
             {
-                "feature": "prediction_entropy", "kind": "prediction_distribution",
-                "cohort": cohort_name, "train_mean": float(prediction["prediction_entropy"].mean()),
+                "feature": "prediction_entropy",
+                "kind": "prediction_distribution",
+                "cohort": cohort_name,
+                "train_mean": float(prediction["prediction_entropy"].mean()),
                 "train_std": float(prediction["prediction_entropy"].std()),
             }
         )
@@ -117,10 +137,13 @@ def _population_stability_index(train: np.ndarray, current: np.ndarray) -> float
 
 def _plot_shift(frame: pd.DataFrame, path: Path) -> None:
     import os
+
     os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
     import matplotlib
+
     matplotlib.use("Agg", force=True)
     import matplotlib.pyplot as plt
+
     numeric = frame[frame["kind"] == "numeric"].copy()
     numeric["abs_smd"] = numeric["standardized_mean_difference"].abs()
     plot = numeric.sort_values("abs_smd", ascending=False).head(12).sort_values("abs_smd")

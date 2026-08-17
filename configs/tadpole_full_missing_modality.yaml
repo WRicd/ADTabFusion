@@ -32,4 +32,3 @@ models:
 missing_modality:
   model: logistic_regression
   mask: [cognitive, mri_structural, pet_fdg, pet_amyloid, all_pet, genetic]
-

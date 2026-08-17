@@ -25,14 +25,10 @@ def make_subject_split(
     subject_ids = subjects.index.to_numpy()
     subject_labels = subjects.to_numpy()
 
-    train_val_ids, test_ids = _split_ids(
-        subject_ids, subject_labels, test_size, seed, "test"
-    )
+    train_val_ids, test_ids = _split_ids(subject_ids, subject_labels, test_size, seed, "test")
     train_val_labels = subjects.loc[train_val_ids].to_numpy()
     relative_val_size = val_size / (1.0 - test_size)
-    train_ids, val_ids = _split_ids(
-        train_val_ids, train_val_labels, relative_val_size, seed, "val"
-    )
+    train_ids, val_ids = _split_ids(train_val_ids, train_val_labels, relative_val_size, seed, "val")
 
     split = {
         "train_idx": df.index[df[subject_col].isin(train_ids)].astype(int).tolist(),
@@ -41,9 +37,7 @@ def make_subject_split(
     }
     metrics_dir = Path(output_dir) / "metrics"
     metrics_dir.mkdir(parents=True, exist_ok=True)
-    (metrics_dir / f"split_seed_{seed}.json").write_text(
-        json.dumps(split, indent=2), encoding="utf-8"
-    )
+    (metrics_dir / f"split_seed_{seed}.json").write_text(json.dumps(split, indent=2), encoding="utf-8")
     return split
 
 
@@ -65,4 +59,3 @@ def _split_ids(
     except ValueError as exc:
         LOGGER.warning("Falling back to non-stratified %s split: %s", name, exc)
         return train_test_split(ids, test_size=test_size, random_state=seed, stratify=None)
-

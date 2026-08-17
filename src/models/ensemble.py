@@ -54,7 +54,7 @@ class SoftVotingClassifier(ClassifierMixin, BaseEstimator):
             if classes is None:
                 classes = np.asarray(member_classes)
             elif not np.array_equal(classes, np.asarray(member_classes)):
-                raise ValueError(f"Ensemble member '{name}' has classes {member_classes!r}, " f"expected {classes!r}.")
+                raise ValueError(f"Ensemble member '{name}' has classes {member_classes!r}, expected {classes!r}.")
 
         if classes is None:
             if y is None:

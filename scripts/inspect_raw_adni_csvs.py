@@ -10,14 +10,10 @@ from src.adni_inventory import scan_raw_directory, write_inventory_outputs
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Inspect local ADNI CSV structure and infer available modalities."
-    )
+    parser = argparse.ArgumentParser(description="Inspect local ADNI CSV structure and infer available modalities.")
     parser.add_argument("--raw-dir", default="data/raw")
     parser.add_argument("--output-md", default="docs/adni_file_inventory.md")
-    parser.add_argument(
-        "--output-json", default="outputs/metrics/adni_file_inventory.json"
-    )
+    parser.add_argument("--output-json", default="outputs/metrics/adni_file_inventory.json")
     parser.add_argument(
         "--availability-json",
         default="outputs/metrics/adni_modality_availability.json",

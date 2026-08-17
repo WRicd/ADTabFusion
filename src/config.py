@@ -9,9 +9,7 @@ def load_config(path: str | Path) -> dict[str, Any]:
     try:
         import yaml
     except ImportError as exc:
-        raise RuntimeError(
-            "PyYAML is required. Install dependencies with: pip install -r requirements.txt"
-        ) from exc
+        raise RuntimeError("PyYAML is required. Install dependencies with: pip install -r requirements.txt") from exc
 
     with Path(path).open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
@@ -31,4 +29,3 @@ def ensure_output_dirs(output_dir: str | Path) -> dict[str, Path]:
     for path in paths.values():
         path.mkdir(parents=True, exist_ok=True)
     return paths
-

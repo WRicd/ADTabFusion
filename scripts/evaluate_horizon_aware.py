@@ -41,17 +41,24 @@ def main() -> None:
     for column in ["predicted_class", "prob_CN", "prob_MCI", "prob_AD"]:
         evaluation[column] = predicted[column].to_numpy()
     metrics = evaluate_external_predictions(
-        evaluation, "predicted_class", ["prob_CN", "prob_MCI", "prob_AD"],
-        manifest["model_id"], config.get("minimum_stable_rows", 20),
+        evaluation,
+        "predicted_class",
+        ["prob_CN", "prob_MCI", "prob_AD"],
+        manifest["model_id"],
+        config.get("minimum_stable_rows", 20),
     )
     metrics.to_csv(root / "evaluation" / "horizon_aware_metrics.csv", index=False)
     first = first_follow_up(evaluation)
     first["_predicted_label"] = first["predicted_class"].map(CLASS_TO_ID)
     boot = config.get("bootstrap", {})
     ci = subject_bootstrap_ci(
-        first, "D4_label", "_predicted_label", ["prob_CN", "prob_MCI", "prob_AD"],
+        first,
+        "D4_label",
+        "_predicted_label",
+        ["prob_CN", "prob_MCI", "prob_AD"],
         repetitions=boot.get("repetitions", 1000),
-        confidence_level=boot.get("confidence_level", 0.95), seed=boot.get("seed", 42),
+        confidence_level=boot.get("confidence_level", 0.95),
+        seed=boot.get("seed", 42),
     )
     ci.insert(0, "scope", "first_follow_up")
     ci.insert(0, "model_id", manifest["model_id"])

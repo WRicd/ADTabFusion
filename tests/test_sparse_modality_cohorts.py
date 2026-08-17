@@ -11,4 +11,3 @@ def test_sparse_modalities_have_separate_configs_and_reports():
         config = load_config(path)
         assert config["sparse_cohort"]["modality"] == modality
         assert "sparse_modalities" in config["paths"]["summary_report"]
-

@@ -9,9 +9,7 @@ def test_shared_subject_partition_can_be_applied_to_compact_and_full():
     compact = full.copy()
     partitions = make_subject_partitions(full, seed=42)
     for split, ids in partitions.items():
-        assert set(full[full["RID"].isin(ids)]["RID"]) == set(
-            compact[compact["RID"].isin(ids)]["RID"]
-        )
+        assert set(full[full["RID"].isin(ids)]["RID"]) == set(compact[compact["RID"].isin(ids)]["RID"])
     assert set(partitions["train"]).isdisjoint(partitions["test"])
 
 
@@ -27,4 +25,3 @@ def test_baseline_selection_prefers_bl_then_earliest_date():
     selected = select_baseline_records(frame).set_index("RID")
     assert selected.loc[1, "value"] == 2
     assert selected.loc[2, "value"] == 4
-

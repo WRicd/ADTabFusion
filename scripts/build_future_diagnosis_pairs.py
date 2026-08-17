@@ -25,18 +25,27 @@ def build_from_config(config: dict) -> tuple[pd.DataFrame, dict[str, pd.DataFram
     manifest = json.loads(Path(data["feature_source_manifest"]).read_text(encoding="utf-8"))
     features = manifest["feature_order"]
     frame = load_longitudinal_source(
-        data["train_csv"], features, data.get("subject_col", "RID"),
-        data.get("date_col", "EXAMDATE"), data.get("label_col", "DX"),
+        data["train_csv"],
+        features,
+        data.get("subject_col", "RID"),
+        data.get("date_col", "EXAMDATE"),
+        data.get("label_col", "DX"),
     )
     split_cfg = config.get("split", {})
     split = split_subjects_before_pairing(
-        frame, data.get("subject_col", "RID"), config["project"].get("random_state", 42),
-        split_cfg.get("val_size", 0.1), split_cfg.get("test_size", 0.2),
+        frame,
+        data.get("subject_col", "RID"),
+        config["project"].get("random_state", 42),
+        split_cfg.get("val_size", 0.1),
+        split_cfg.get("test_size", 0.2),
     )
     pair_cfg = config.get("pairing", {})
     pairs = build_split_pairs(
-        frame, features, split,
-        subject_col=data.get("subject_col", "RID"), date_col=data.get("date_col", "EXAMDATE"),
+        frame,
+        features,
+        split,
+        subject_col=data.get("subject_col", "RID"),
+        date_col=data.get("date_col", "EXAMDATE"),
         label_col=data.get("label_col", "DX"),
         min_horizon_months=pair_cfg.get("min_horizon_months", 6),
         max_horizon_months=pair_cfg.get("max_horizon_months", 60),

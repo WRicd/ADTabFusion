@@ -26,4 +26,3 @@ def test_dictionary_parser_matches_full_source_suffix(tmp_path):
 
     assert matches["ABETA_UPENNBIOMK9_04_19_17"]["TBLNAME"] == "UPENNBIOMK9"
     assert len(build_dictionary_index(dictionary)) == 1
-

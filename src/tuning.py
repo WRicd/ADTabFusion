@@ -196,7 +196,7 @@ def tune_model(
 
     if model_name not in SEARCH_SPACES:
         raise ValueError(
-            f"No search space defined for model: {model_name}. " f"Available: {', '.join(sorted(SEARCH_SPACES))}"
+            f"No search space defined for model: {model_name}. Available: {', '.join(sorted(SEARCH_SPACES))}"
         )
     if mode == "holdout" and (X_val is None or y_val is None):
         raise ValueError("mode='holdout' requires X_val and y_val.")

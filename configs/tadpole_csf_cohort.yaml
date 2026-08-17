@@ -13,4 +13,3 @@ sparse_cohort:
   modality: csf
 paths:
   summary_report: outputs/phase_b/sparse_modalities/csf_cohort_summary.md
-

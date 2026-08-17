@@ -17,4 +17,3 @@ def test_subject_split_has_no_leakage(tmp_path):
     assert sets[0].isdisjoint(sets[1])
     assert sets[0].isdisjoint(sets[2])
     assert sets[1].isdisjoint(sets[2])
-

@@ -33,4 +33,3 @@ Models, calibration, and selective prediction thresholds are selected on validat
 ## Presentation
 
 The bilingual Streamlit dashboard reads frozen CSV/JSON files under `outputs` only. Public pages and screenshots contain aggregate results and never display RID, PTID, or participant-level rows.
-

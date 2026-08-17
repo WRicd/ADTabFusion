@@ -56,7 +56,14 @@ def write_temporal_split(
     }
     (output / "temporal_split_manifest.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
     assignment.to_csv(output / "temporal_split_assignments.csv", index=False)
-    lines = ["# Locked D1/D2 Temporal Subject Split", "", "> Split cutoffs use dates only; labels and D4 were not accessed.", "", "| Split | Subjects | Earliest index | Latest index |", "|---|---:|---|---|"]
+    lines = [
+        "# Locked D1/D2 Temporal Subject Split",
+        "",
+        "> Split cutoffs use dates only; labels and D4 were not accessed.",
+        "",
+        "| Split | Subjects | Earliest index | Latest index |",
+        "|---|---:|---|---|",
+    ]
     for name, ids in split.items():
         dates = payload["cut_dates"][name]
         lines.append(f"| {name} | {len(ids)} | {dates['min']} | {dates['max']} |")

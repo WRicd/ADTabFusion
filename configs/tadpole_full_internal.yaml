@@ -36,4 +36,3 @@ paths:
   feature_blacklist: outputs/metrics/tadpole_full_feature_blacklist.json
   feature_whitelist: outputs/metrics/tadpole_full_feature_whitelist.json
   leakage_report: docs/tadpole_full_leakage_audit.md
-

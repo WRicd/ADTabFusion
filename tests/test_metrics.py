@@ -10,4 +10,3 @@ def test_metric_keys():
     metrics = compute_metrics(y_true, y_pred, y_prob, labels=[0, 1])
     assert "accuracy" in metrics
     assert "macro_f1" in metrics
-

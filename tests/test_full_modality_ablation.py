@@ -14,10 +14,5 @@ def test_primary_modality_groups_are_disjoint():
 
 def test_ablation_config_does_not_reference_sparse_modalities():
     config = load_config("configs/tadpole_full_modality_ablation.yaml")
-    modalities = {
-        modality
-        for combination in config["ablation"]["groups"].values()
-        for modality in combination
-    }
+    modalities = {modality for combination in config["ablation"]["groups"].values() for modality in combination}
     assert {"mri_dti", "csf", "pet_other"}.isdisjoint(modalities)
-

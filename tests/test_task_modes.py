@@ -15,4 +15,3 @@ def test_baseline_only_keeps_one_row_per_subject():
     assert len(selected) == 2
     assert selected["RID"].nunique() == 2
     assert set(selected["VISCODE"]) == {"bl"}
-

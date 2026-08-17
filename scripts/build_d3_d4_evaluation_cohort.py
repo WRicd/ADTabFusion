@@ -21,11 +21,16 @@ def main() -> None:
     data = config["data"]
     manifest = json.loads(Path(data["horizon_manifest"]).read_text(encoding="utf-8"))
     _, summary = build_d3_d4_evaluation_cohort(
-        data["d3_csv"], data["d4_csv"], data["direct_primary_predictions"],
-        data["direct_sensitivity_predictions"], manifest["base_feature_order"],
+        data["d3_csv"],
+        data["d4_csv"],
+        data["direct_primary_predictions"],
+        data["direct_sensitivity_predictions"],
+        manifest["base_feature_order"],
         Path(config["project"]["output_dir"]) / "evaluation",
-        data.get("subject_col", "RID"), data.get("d3_date_col", "EXAMDATE"),
-        data.get("d4_date_col", "ScanDate"), data.get("d4_label_col", "Diagnosis"),
+        data.get("subject_col", "RID"),
+        data.get("d3_date_col", "EXAMDATE"),
+        data.get("d4_date_col", "ScanDate"),
+        data.get("d4_label_col", "Diagnosis"),
     )
     print(f"Matched {summary['matched_rows']} D4 rows from {summary['matched_subjects']} subjects.")
 

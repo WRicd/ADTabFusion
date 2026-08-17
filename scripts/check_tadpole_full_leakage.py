@@ -18,13 +18,9 @@ def main() -> int:
     args = parser.parse_args()
     config = load_config(args.config)
     paths = config.get("paths", {})
-    catalog_path = Path(
-        paths.get("feature_catalog", "outputs/metrics/tadpole_full_feature_catalog.csv")
-    )
+    catalog_path = Path(paths.get("feature_catalog", "outputs/metrics/tadpole_full_feature_catalog.csv"))
     if not catalog_path.exists():
-        parser.error(
-            f"Feature catalog does not exist: {catalog_path}. Run build_tadpole_feature_catalog.py first."
-        )
+        parser.error(f"Feature catalog does not exist: {catalog_path}. Run build_tadpole_feature_catalog.py first.")
     catalog = pd.read_csv(catalog_path)
     blacklist, whitelist = write_leakage_artifacts(
         catalog,
@@ -39,4 +35,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

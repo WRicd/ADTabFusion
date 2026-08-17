@@ -20,8 +20,5 @@ def test_smoke_train_pipeline(tmp_path):
         "preprocessing": {"numeric_impute": "median"},
         "models": {"logistic_regression": {"max_iter": 200}},
     }
-    metrics, _, _ = run_single_experiment(
-        df, "label", ["AGE", "PTGENDER", "MMSE"], "logistic_regression", cfg, 42
-    )
+    metrics, _, _ = run_single_experiment(df, "label", ["AGE", "PTGENDER", "MMSE"], "logistic_regression", cfg, 42)
     assert "macro_f1" in metrics
-

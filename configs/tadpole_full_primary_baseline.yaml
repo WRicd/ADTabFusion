@@ -41,4 +41,3 @@ models:
     max_iter: 150
     learning_rate: 0.05
     max_leaf_nodes: 31
-

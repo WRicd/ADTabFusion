@@ -18,4 +18,3 @@ __all__ = [
     "section_header",
     "status_badge",
 ]
-

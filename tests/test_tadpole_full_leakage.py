@@ -42,4 +42,3 @@ def test_labels_identifiers_and_dates_are_not_whitelisted(tmp_path):
     assert "DX" not in whitelist
     assert "MMSE" in whitelist
     assert "ABETA_UPENNBIOMK9_04_19_17" in whitelist
-

@@ -17,9 +17,7 @@ This stage intentionally does not implement cross-table merging.
 
 
 def main() -> None:
-    raise SystemExit(
-        "Not implemented: run inspect_raw_adni_csvs.py and confirm the inventory first."
-    )
+    raise SystemExit("Not implemented: run inspect_raw_adni_csvs.py and confirm the inventory first.")
 
 
 if __name__ == "__main__":

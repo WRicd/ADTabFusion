@@ -16,4 +16,3 @@ def test_all_visit_leakage_blacklist():
     df = pd.DataFrame(columns=["DX", "DXCHANGE", "DX_bl", "VISCODE", "AGE"])
     blacklist = build_feature_blacklist(cfg, df)
     assert {"DX", "DXCHANGE", "DX_bl"}.issubset(blacklist)
-

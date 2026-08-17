@@ -27,8 +27,7 @@ def _require_torch():
         import torch
     except ImportError as exc:  # pragma: no cover - exercised only without torch
         raise ImportError(
-            "PyTorch is required for deep tabular models. "
-            "Install it from https://pytorch.org (CUDA build recommended)."
+            "PyTorch is required for deep tabular models. Install it from https://pytorch.org (CUDA build recommended)."
         ) from exc
     return torch
 

@@ -1,13 +1,20 @@
+# The frozen artifact directory must never be rewritten by any hook. Files under
+# outputs/ are locked by SHA-256 in the Phase D registry; end-of-file-fixer and
+# trailing-whitespace would add a trailing newline and silently break the
+# D4-replay hash guardrail. Ruff never targets them (JSON/YAML are out of scope),
+# so excluding the whole directory is the cheap, permanent guard.
+exclude: ^outputs/
+
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.0
+    rev: v0.16.0
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer

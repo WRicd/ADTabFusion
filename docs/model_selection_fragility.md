@@ -45,11 +45,9 @@ ties and fall through to the existing complexity tie-break:
 
 ```python
 best = full_results["macro_f1"].max()
-tolerance = 0.005                       # preregister this value
+tolerance = 0.005  # preregister this value
 contenders = full_results[full_results["macro_f1"] >= best - tolerance]
-selected_row = contenders.sort_values(
-    ["complexity", "log_loss", "brier_score"], ascending=[True, True, True]
-).iloc[0]
+selected_row = contenders.sort_values(["complexity", "log_loss", "brier_score"], ascending=[True, True, True]).iloc[0]
 ```
 
 With a 0.005 band, both models above are contenders and the simpler

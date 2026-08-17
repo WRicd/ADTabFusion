@@ -45,4 +45,3 @@ This stage uses only fields available in the local TADPOLE D1_D2 CSV.
 - Demographic extensions: `PTETHCAT`, `PTRACCAT`
 
 Unavailable modalities are not shown as active dashboard modalities and are not used in missing-modality experiments.
-

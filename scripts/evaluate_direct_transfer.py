@@ -32,16 +32,23 @@ def main() -> None:
         model_id = str(frame[prefix + "model_id"].iloc[0])
         metric_frames.append(
             evaluate_external_predictions(
-                frame, prediction_col, probability_cols, model_id,
+                frame,
+                prediction_col,
+                probability_cols,
+                model_id,
                 config.get("minimum_stable_rows", 20),
             )
         )
         first = first_follow_up(frame)
         first["_predicted_label"] = first[prediction_col].map(CLASS_TO_ID)
         ci = subject_bootstrap_ci(
-            first, "D4_label", "_predicted_label", probability_cols,
+            first,
+            "D4_label",
+            "_predicted_label",
+            probability_cols,
             repetitions=boot.get("repetitions", 1000),
-            confidence_level=boot.get("confidence_level", 0.95), seed=boot.get("seed", 42),
+            confidence_level=boot.get("confidence_level", 0.95),
+            seed=boot.get("seed", 42),
         )
         ci.insert(0, "scope", "first_follow_up")
         ci.insert(0, "model_id", model_id)

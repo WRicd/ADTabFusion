@@ -32,4 +32,3 @@ def test_required_columns_are_validated(tmp_path) -> None:
     frame, error = load_csv(path, ("metric",))
     assert frame.empty
     assert "missing columns" in str(error)
-

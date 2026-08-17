@@ -18,9 +18,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Audit the full TADPOLE challenge files.")
     parser.add_argument("--data-dir", default="data/tadpole_challenge")
     parser.add_argument("--output-md", default="docs/tadpole_challenge_inventory.md")
-    parser.add_argument(
-        "--output-json", default="outputs/metrics/tadpole_challenge_file_inventory.json"
-    )
+    parser.add_argument("--output-json", default="outputs/metrics/tadpole_challenge_file_inventory.json")
     parser.add_argument(
         "--availability-json",
         default="outputs/metrics/tadpole_full_modality_availability.json",
@@ -59,9 +57,7 @@ def main() -> int:
         for modality, matched_columns in sorted(modalities.items())
     }
     output_path = Path(args.availability_json)
-    output_path.write_text(
-        json.dumps(availability, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    output_path.write_text(json.dumps(availability, ensure_ascii=False, indent=2), encoding="utf-8")
     _append_modality_summary(Path(args.output_md), availability)
     print(f"Scanned {len(inventory)} CSV files.")
     print(f"D1/D2 columns classified: {len(columns)}")
@@ -81,9 +77,7 @@ def _append_modality_summary(report_path: Path, availability: dict) -> None:
         "|---|---|---:|",
     ]
     for modality, entry in availability.items():
-        lines.append(
-            f"| {modality} | {'yes' if entry['available'] else 'no'} | {entry['feature_count']} |"
-        )
+        lines.append(f"| {modality} | {'yes' if entry['available'] else 'no'} | {entry['feature_count']} |")
     lines.append("")
     with report_path.open("a", encoding="utf-8") as handle:
         handle.write("\n".join(lines))
@@ -91,4 +85,3 @@ def _append_modality_summary(report_path: Path, availability: dict) -> None:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

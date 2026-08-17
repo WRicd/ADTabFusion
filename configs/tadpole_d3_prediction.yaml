@@ -17,4 +17,3 @@ inference:
   transform_only: true
   allow_missing_features: true
   forbid_fit: true
-

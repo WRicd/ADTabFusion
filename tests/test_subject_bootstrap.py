@@ -15,9 +15,12 @@ def test_bootstrap_resamples_complete_subject_blocks():
 def test_subject_bootstrap_is_seeded():
     frame = pd.DataFrame(
         {
-            "RID": [1, 2, 3, 4, 5, 6], "truth": [0, 1, 2, 0, 1, 2],
-            "pred": [0, 1, 2, 1, 1, 2], "p0": [.8, .1, .1, .3, .1, .1],
-            "p1": [.1, .8, .1, .5, .8, .1], "p2": [.1, .1, .8, .2, .1, .8],
+            "RID": [1, 2, 3, 4, 5, 6],
+            "truth": [0, 1, 2, 0, 1, 2],
+            "pred": [0, 1, 2, 1, 1, 2],
+            "p0": [0.8, 0.1, 0.1, 0.3, 0.1, 0.1],
+            "p1": [0.1, 0.8, 0.1, 0.5, 0.8, 0.1],
+            "p2": [0.1, 0.1, 0.8, 0.2, 0.1, 0.8],
         }
     )
     a = subject_bootstrap_ci(frame, "truth", "pred", ["p0", "p1", "p2"], repetitions=20, seed=2)

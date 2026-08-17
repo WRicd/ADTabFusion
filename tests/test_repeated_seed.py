@@ -17,4 +17,3 @@ def test_repeated_seed_summary_columns():
     summary = summarize_seed_results(df, ["model", "task_mode"])
     assert summary.loc[0, "accuracy_mean"] == 0.6
     assert "macro_f1_std" in summary.columns
-

@@ -19,4 +19,3 @@ def test_multiclass_calibration_metrics_are_reported():
     assert metrics["log_loss"] >= 0
     assert metrics["brier_score"] >= 0
     assert metrics["confusion_matrix"] == [[2, 0, 0], [0, 2, 0], [0, 0, 2]]
-

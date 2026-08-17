@@ -14,4 +14,3 @@ def test_missing_indicators_add_columns_and_fit_train_only():
     assert indicated.transform(test).shape[1] == 2
     statistic = indicated.named_transformers_["num"].named_steps["imputer"].statistics_[0]
     assert statistic == 2.0
-

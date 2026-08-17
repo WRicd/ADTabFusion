@@ -15,12 +15,8 @@ def _status(availability: dict, key: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Check required and recommended ADNI table categories."
-    )
-    parser.add_argument(
-        "--inventory", default="outputs/metrics/adni_modality_availability.json"
-    )
+    parser = argparse.ArgumentParser(description="Check required and recommended ADNI table categories.")
+    parser.add_argument("--inventory", default="outputs/metrics/adni_modality_availability.json")
     args = parser.parse_args()
     path = Path(args.inventory)
     if not path.exists():

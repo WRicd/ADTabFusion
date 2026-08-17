@@ -16,9 +16,7 @@ def generate_phase_b_report(output_path: str | Path) -> None:
         )
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    whitelist = json.loads(
-        Path("outputs/phase_a/primary_whitelist.json").read_text(encoding="utf-8")
-    )
+    whitelist = json.loads(Path("outputs/phase_a/primary_whitelist.json").read_text(encoding="utf-8"))
     baseline = _read_csv(phase_b / "baseline_results_summary.csv")
     comparison = _read_csv(phase_b / "compact_vs_full_summary.csv")
     ablation = _read_csv(phase_b / "modality_ablation_summary.csv")
@@ -168,4 +166,3 @@ def _comparison_conclusion(summary: pd.DataFrame) -> str:
         f"Across reported models, the full primary feature set {direction} mean Macro F1 "
         f"by {difference:+.4f} versus the compact feature set on the identical subject cohort."
     )
-

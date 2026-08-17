@@ -30,9 +30,7 @@ def audit_d3_schema(
 ) -> dict[str, Any]:
     features = json.loads(Path(whitelist_path).read_text(encoding="utf-8"))
     catalog = pd.read_csv(catalog_path)
-    modality_map = dict(
-        zip(catalog["column_name"].astype(str), catalog["modality"].astype(str))
-    )
+    modality_map = dict(zip(catalog["column_name"].astype(str), catalog["modality"].astype(str)))
     train = pd.read_csv(
         train_csv,
         usecols=lambda column: column in features,
@@ -105,9 +103,9 @@ def audit_d3_schema(
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     compatibility.to_csv(output / "d3_feature_compatibility.csv", index=False)
-    compatibility[
-        ["feature", "modality", "train_missing_rate", "d3_missing_rate", "missing_rate_shift"]
-    ].to_csv(output / "d3_missingness_shift.csv", index=False)
+    compatibility[["feature", "modality", "train_missing_rate", "d3_missing_rate", "missing_rate_shift"]].to_csv(
+        output / "d3_missingness_shift.csv", index=False
+    )
     (output / "d3_modality_coverage.json").write_text(
         json.dumps({"modalities": coverage, "deployment": decision}, indent=2),
         encoding="utf-8",

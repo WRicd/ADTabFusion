@@ -23,9 +23,7 @@ def select_d3_index_records(
     selected_rows = set(selected["_source_row"])
     audit = ordered[[subject_col, date_col, "_source_row"]].copy()
     audit["selected"] = audit["_source_row"].isin(selected_rows)
-    selected = selected.sort_values(subject_col).drop(
-        columns=["_source_row", "_parsed_date", "_date_missing"]
-    )
+    selected = selected.sort_values(subject_col).drop(columns=["_source_row", "_parsed_date", "_date_missing"])
     return selected.reset_index(drop=True), audit.reset_index(drop=True)
 
 
@@ -48,9 +46,7 @@ def prepare_d3_cohort(
     modality_coverage = {}
     for modality, columns in modality_groups.items():
         available = [column for column in columns if column in selected.columns]
-        modality_coverage[modality] = (
-            float(selected[available].notna().any(axis=1).mean()) if available else 0.0
-        )
+        modality_coverage[modality] = float(selected[available].notna().any(axis=1).mean()) if available else 0.0
     summary = {
         "source_rows": int(len(frame)),
         "unique_subjects": int(frame[subject_col].nunique()),

@@ -58,4 +58,3 @@ Dashboard tests under `tests/dashboard/` verify:
 - consistency with frozen Phase D metrics;
 - required D4 limitation labels;
 - graceful optional-artifact empty states.
-

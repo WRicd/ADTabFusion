@@ -14,4 +14,3 @@ def metric_card(label: str, value: str, note: str = "") -> None:
         f"{note_html}</div>",
         unsafe_allow_html=True,
     )
-

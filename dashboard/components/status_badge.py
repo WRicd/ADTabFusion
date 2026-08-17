@@ -11,4 +11,3 @@ def status_badge(label: str, tone: str = "info") -> None:
         f'<span class="ad-badge ad-badge-{tone}">{escape(label)}</span>',
         unsafe_allow_html=True,
     )
-
