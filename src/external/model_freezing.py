@@ -28,6 +28,20 @@ def sha256_file(path: str | Path) -> str:
     return digest.hexdigest()
 
 
+def load_verified_pipeline(model_path: str | Path, expected_sha256: str) -> Any:
+    """Load a frozen pipeline only after its SHA-256 matches the manifest.
+
+    A ``.joblib`` pipeline is a pickle, so deserializing one executes whatever
+    the file says; every frozen model already ships a manifest digest, so the
+    digest is checked before the file is handed to joblib.
+    """
+    path = Path(model_path)
+    digest = sha256_file(path)
+    if digest != expected_sha256:
+        raise RuntimeError(f"Refusing to load {path}: SHA-256 {digest} does not match manifest {expected_sha256}.")
+    return joblib.load(path)
+
+
 def stable_subject_hash(subjects: pd.Series) -> str:
     values = sorted({str(value) for value in subjects.dropna()})
     return hashlib.sha256("\n".join(values).encode("utf-8")).hexdigest()

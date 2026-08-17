@@ -4,11 +4,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-import joblib
 import numpy as np
 import pandas as pd
 
 from src.evaluation import compute_metrics
+from src.external.model_freezing import load_verified_pipeline
 from src.phase_d.transition_model import ABLATIONS, load_transition_data
 
 
@@ -66,7 +66,12 @@ def evaluate_selective_prediction(config: dict[str, Any]) -> dict[str, Any]:
     features = ABLATIONS["features_plus_source_dx_forecast"](base_features)
     validation = pairs[pairs.split == "validation"]
     test = pairs[pairs.split == "temporal_test"]
-    model = joblib.load(output / "models" / "calibrated_transition_pipeline.joblib")
+    calibration_manifest = json.loads(
+        (output / "manifests" / "calibrated_transition_manifest.json").read_text(encoding="utf-8")
+    )
+    model = load_verified_pipeline(
+        output / "models" / "calibrated_transition_pipeline.joblib", calibration_manifest["calibrated_model_sha256"]
+    )
     validation_probability = model.predict_proba(validation[features])
     test_probability = model.predict_proba(test[features])
     thresholds = thresholds_from_validation(validation_probability, config["coverages"])

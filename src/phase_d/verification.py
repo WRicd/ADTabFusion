@@ -4,13 +4,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-import joblib
 import numpy as np
 import pandas as pd
 
 from src.external.d3_cohort import select_d3_index_records
 from src.external.inference import predict_with_frozen_pipeline, probability_frame
-from src.external.model_freezing import sha256_file
+from src.external.model_freezing import load_verified_pipeline, sha256_file
 from src.external.schema_alignment import align_to_frozen_schema
 
 
@@ -51,7 +50,10 @@ def verify_phase_c_artifacts(root: str | Path = "outputs/phase_c") -> dict[str, 
         hashes[role] = {"model_sha256": model_hash, "config_sha256": config_hash}
         _check(checks, f"{role}_model_hash", model_hash == manifest["model_sha256"], model_hash)
         _check(checks, f"{role}_config_hash", config_hash == manifest["config_sha256"], config_hash)
-        pipeline = joblib.load(model_path)
+        if model_hash != manifest["model_sha256"]:
+            _check(checks, f"{role}_feature_order", False, "not loaded: model digest does not match manifest")
+            continue
+        pipeline = load_verified_pipeline(model_path, manifest["model_sha256"])
         fitted_order = list(pipeline.named_steps["preprocessor"].feature_names_in_)
         _check(
             checks, f"{role}_feature_order", fitted_order == manifest["feature_order"], f"{len(fitted_order)} features"
@@ -86,9 +88,10 @@ def verify_phase_c_artifacts(root: str | Path = "outputs/phase_c") -> dict[str, 
     _check(checks, "matched_subjects", matched["RID"].nunique() == 197, str(matched["RID"].nunique()))
     first = matched.sort_values(["RID", "D4_SCANDATE"]).drop_duplicates("RID")
     _check(checks, "first_follow_up_unique", len(first) == first["RID"].nunique() == 197, str(len(first)))
-    if "horizon_aware" in manifests:
-        pipeline = joblib.load(root / "models/horizon_aware_pipeline.joblib")
-        aligned = align_to_frozen_schema(matched, manifests["horizon_aware"]["feature_order"])
+    horizon = manifests.get("horizon_aware")
+    if horizon and hashes["horizon_aware"]["model_sha256"] == horizon["model_sha256"]:
+        pipeline = load_verified_pipeline(root / "models/horizon_aware_pipeline.joblib", horizon["model_sha256"])
+        aligned = align_to_frozen_schema(matched, horizon["feature_order"])
         reproduced = probability_frame(pipeline.predict_proba(aligned))
         stored = pd.read_csv(root / "predictions/d3_d4_horizon_aware.csv")
         columns = ["prob_CN", "prob_MCI", "prob_AD"]

@@ -4,14 +4,13 @@ import json
 from pathlib import Path
 from typing import Any
 
-import joblib
 import numpy as np
 import pandas as pd
 
 from src.data_schema import normalize_diagnosis
 from src.evaluation import compute_metrics
 from src.external.d3_cohort import select_d3_index_records
-from src.external.model_freezing import sha256_file
+from src.external.model_freezing import load_verified_pipeline, sha256_file
 from src.external.schema_alignment import align_to_frozen_schema
 
 
@@ -26,7 +25,9 @@ def replay_phase_d_on_d4(output_root: str | Path = "outputs/phase_d") -> dict[st
     threshold = json.loads((root / "manifests" / "selective_prediction_manifest.json").read_text(encoding="utf-8"))[
         "threshold"
     ]
-    model = joblib.load(root / "models" / "calibrated_transition_pipeline.joblib")
+    model = load_verified_pipeline(
+        root / "models" / "calibrated_transition_pipeline.joblib", manifest["calibrated_model_sha256"]
+    )
     matched = pd.read_csv("outputs/phase_c/evaluation/d3_d4_matched_rows.csv", low_memory=False)
     base_features = [
         feature for feature in manifest["feature_order"] if feature not in {"SOURCE_DX", "forecast_months"}

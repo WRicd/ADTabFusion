@@ -20,6 +20,16 @@
 # it stays single-sourced in theme.py, because chartCategoricalColors exists
 # only in the flat [theme] block and so cannot express two modes.
 
+[server]
+# Defaults today, pinned because the dashboard is exposed to viewers: XSRF
+# protection and same-origin enforcement must survive a Streamlit default change.
+enableXsrfProtection = true
+enableCORS = true
+
+[browser]
+# No usage telemetry leaves a host that also holds the clinical tables.
+gatherUsageStats = false
+
 [client]
 # Keeps the viewer-facing toolbar (which hosts the Light/Dark switcher) while
 # hiding the developer affordances (deploy, rerun, clear cache).

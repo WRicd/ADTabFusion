@@ -11,7 +11,7 @@ from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 
 from src.evaluation import compute_metrics
-from src.external.model_freezing import sha256_file, stable_subject_hash
+from src.external.model_freezing import load_verified_pipeline, sha256_file, stable_subject_hash
 from src.phase_d.transition_model import ABLATIONS, load_transition_data
 
 
@@ -97,7 +97,8 @@ def calibrate_phase_d(config: dict[str, Any]) -> dict[str, Any]:
     validation = pairs[pairs["split"] == "validation"].copy()
     temporal_test = pairs[pairs["split"] == "temporal_test"].copy()
     base_path = output / "models" / "transition_aware_pipeline.joblib"
-    base = joblib.load(base_path)
+    base_manifest = json.loads((output / "manifests" / "transition_aware_manifest.json").read_text(encoding="utf-8"))
+    base = load_verified_pipeline(base_path, base_manifest["model_sha256"])
     candidates, rows = {}, []
     for method in config["methods"]:
         calibrated = ProbabilityCalibratedClassifier(base, method).fit_calibration(
