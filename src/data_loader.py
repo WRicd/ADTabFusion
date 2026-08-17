@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import json
-import os
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from src.artifact_io import write_json
+from src.plotting import optional_agg_pyplot
 
 
 def load_tadpole_csv(path: str | Path) -> pd.DataFrame:
@@ -56,20 +57,15 @@ def audit_dataframe(
         "missing_rate_by_column": {col: float(rate) for col, rate in missing_rate.items()},
         "duplicate_subject_visit_rows": duplicate_subject_visit,
     }
-    (report_dir / "data_audit.json").write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_json(report_dir / "data_audit.json", audit, ensure_ascii=False)
     _plot_missing_rate(missing_rate, figure_dir / "missing_rate_by_column.png")
     _plot_label_distribution(label_distribution, figure_dir / "label_distribution.png")
     return audit
 
 
 def _plot_missing_rate(missing_rate: pd.Series, path: Path) -> None:
-    try:
-        os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-        import matplotlib
-
-        matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt
-    except ImportError:
+    plt = optional_agg_pyplot(path.parent)
+    if plt is None:
         return
 
     top = missing_rate.head(30).iloc[::-1]
@@ -83,13 +79,8 @@ def _plot_missing_rate(missing_rate: pd.Series, path: Path) -> None:
 
 
 def _plot_label_distribution(labels: dict[str, int], path: Path) -> None:
-    try:
-        os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-        import matplotlib
-
-        matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt
-    except ImportError:
+    plt = optional_agg_pyplot(path.parent)
+    if plt is None:
         return
 
     if not labels:

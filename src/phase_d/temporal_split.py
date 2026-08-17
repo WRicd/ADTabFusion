@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from src.artifact_io import write_json
 
 
 def build_temporal_subject_split(
@@ -54,7 +55,7 @@ def write_temporal_split(
             for name in split
         },
     }
-    (output / "temporal_split_manifest.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    write_json(output / "temporal_split_manifest.json", payload)
     assignment.to_csv(output / "temporal_split_assignments.csv", index=False)
     lines = [
         "# Locked D1/D2 Temporal Subject Split",

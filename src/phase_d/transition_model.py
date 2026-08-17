@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import json
 import logging
 import platform
-import subprocess
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,12 +13,14 @@ import sklearn
 from sklearn.model_selection import GroupKFold
 from sklearn.pipeline import Pipeline
 
+from src.artifact_io import read_json, read_tadpole_table, write_json
 from src.data_schema import MULTICLASS_MAPPING, normalize_diagnosis
-from src.evaluation import compute_metrics
-from src.external.model_freezing import sha256_file, stable_subject_hash
+from src.evaluation import compute_metrics, csv_safe_metrics
 from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model
+from src.plotting import agg_pyplot
 from src.preprocessing import build_preprocessor
+from src.provenance import git_commit_hash, sha256_file, stable_subject_hash
 
 LOGGER = logging.getLogger(__name__)
 
@@ -76,19 +76,14 @@ def build_transition_pairs(
 
 def load_transition_data(config: dict[str, Any]) -> tuple[pd.DataFrame, list[str], dict[str, list[Any]]]:
     data = config["data"]
-    features = json.loads(Path(data["feature_profile"]).read_text(encoding="utf-8"))
+    features = read_json(data["feature_profile"])
     required = list(
         dict.fromkeys(
             [data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"), data.get("label_col", "DX"), *features]
         )
     )
-    frame = pd.read_csv(
-        data["train_csv"],
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
-    split = json.loads(Path(data["temporal_split"]).read_text(encoding="utf-8"))["splits"]
+    frame = read_tadpole_table(data["train_csv"], required)
+    split = read_json(data["temporal_split"])["splits"]
     pair_cfg = config.get("pairing", {})
     pairs = build_transition_pairs(
         frame,
@@ -151,7 +146,7 @@ def train_transition_aware(config: dict[str, Any], config_path: str | Path) -> d
                     "model": model_name,
                     "split": "validation",
                     "n_rows": len(validation),
-                    **_csv(metrics),
+                    **csv_safe_metrics(metrics),
                 }
             )
             if ablation == "features_plus_source_dx_forecast":
@@ -195,7 +190,7 @@ def train_transition_aware(config: dict[str, Any], config_path: str | Path) -> d
                 "split": "locked_temporal_test",
                 "n_rows": len(temporal_test),
                 "n_subjects": temporal_test["RID"].nunique(),
-                **_csv(test_metrics),
+                **csv_safe_metrics(test_metrics),
             }
         ]
     ).to_csv(output / "temporal_validation" / "transition_model_results.csv", index=False)
@@ -211,9 +206,7 @@ def train_transition_aware(config: dict[str, Any], config_path: str | Path) -> d
     manifest = _transition_manifest(
         selected_name, selected_pipeline, full_features, train, config, config_path, model_path
     )
-    (output / "manifests" / "transition_aware_manifest.json").write_text(
-        json.dumps(manifest, indent=2), encoding="utf-8"
-    )
+    write_json(output / "manifests" / "transition_aware_manifest.json", manifest)
     _plot_ablation(best_by_ablation, output / "figures" / "transition_ablation.png")
     return {"manifest": manifest, "validation": selected_row.to_dict(), "temporal_test": test_metrics}
 
@@ -296,7 +289,7 @@ def _run_group_kfold(
                 "fold": fold,
                 "model": model_name,
                 "n_subjects": test["RID"].nunique(),
-                **_csv(_evaluate(pipeline, test, features)),
+                **csv_safe_metrics(_evaluate(pipeline, test, features)),
             }
         )
     pd.DataFrame(rows).to_csv(output / "internal_validation" / "transition_groupkfold.csv", index=False)
@@ -316,7 +309,7 @@ def _write_pair_statistics(pairs: pd.DataFrame, output: Path) -> None:
         "future_diagnosis_distribution": pairs["FUTURE_DX"].value_counts().to_dict(),
         "forecast_months": pairs["forecast_months"].describe().to_dict(),
     }
-    (output / "cohorts" / "transition_pair_statistics.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    write_json(output / "cohorts" / "transition_pair_statistics.json", summary)
 
 
 def _transition_manifest(
@@ -328,10 +321,7 @@ def _transition_manifest(
     config_path: str | Path,
     model_path: Path,
 ) -> dict[str, Any]:
-    try:
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = None
+    commit = git_commit_hash()
     return {
         "model_id": f"phase_d_transition_{model_name}",
         "model_name": model_name,
@@ -355,19 +345,8 @@ def _transition_manifest(
     }
 
 
-def _csv(metrics: dict[str, Any]) -> dict[str, Any]:
-    return {key: json.dumps(value) if isinstance(value, list | dict) else value for key, value in metrics.items()}
-
-
 def _plot_ablation(frame: pd.DataFrame, path: Path) -> None:
-    import os
-
-    os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-    import matplotlib
-
-    matplotlib.use("Agg", force=True)
-    import matplotlib.pyplot as plt
-
+    plt = agg_pyplot(path.parent)
     plot = frame.sort_values("macro_f1")
     fig, ax = plt.subplots(figsize=(12.8, 7.2))
     ax.barh(plot["ablation"], plot["macro_f1"], color=["#4c78a8", "#59a14f", "#f28e2b", "#e15759"])

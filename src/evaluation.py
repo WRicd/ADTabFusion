@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import numpy as np
@@ -60,3 +61,12 @@ def compute_metrics(
         result[f"f1_class_{label}"] = float(per_class_f1[index])
     result["confusion_matrix"] = confusion_matrix(y_true, y_pred, labels=metric_labels).tolist()
     return result
+
+
+def csv_safe_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
+    """Flatten nested metric values so a metrics dict fits in one CSV row.
+
+    ``compute_metrics`` returns lists (confusion matrices, per-class arrays) that
+    pandas would otherwise write as a Python repr; JSON keeps them parseable.
+    """
+    return {key: json.dumps(value) if isinstance(value, list | dict) else value for key, value in metrics.items()}

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import logging
-import os
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +9,9 @@ import numpy as np
 import pandas as pd
 from sklearn.inspection import permutation_importance
 
+from src.artifact_io import read_json
 from src.feature_groups import available_groups
+from src.plotting import optional_agg_pyplot
 from src.splits import make_subject_split
 from src.training import load_labeled_data, model_feature_columns
 
@@ -294,15 +294,9 @@ def _feature_to_modality(feature: str, groups: dict[str, list[str]]) -> str:
 def _plot_importance(df: pd.DataFrame, label_col: str, path: Path, title: str) -> None:
     if df.empty:
         return
-    try:
-        os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-        import matplotlib
-
-        matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt
-    except ImportError:
+    plt = optional_agg_pyplot(path.parent)
+    if plt is None:
         return
-
     plot_df = df.iloc[::-1]
     fig, ax = plt.subplots(figsize=(8, max(4, len(plot_df) * 0.25)))
     ax.barh(plot_df[label_col].astype(str), plot_df["importance"].astype(float))
@@ -316,7 +310,7 @@ def _best_seed(output_dir: Path) -> int | None:
     path = output_dir / "metrics" / "best_model.json"
     if not path.exists():
         return None
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = read_json(path)
     return data.get("seed")
 
 
@@ -325,5 +319,5 @@ def _best_model_name(output_dir: Path) -> str | None:
     path = output_dir / "metrics" / "best_model.json"
     if not path.exists():
         return None
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = read_json(path)
     return data.get("model")

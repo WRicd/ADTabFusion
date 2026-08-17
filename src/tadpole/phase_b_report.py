@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pandas as pd
+
+from src.artifact_io import read_json
 
 
 def generate_phase_b_report(output_path: str | Path) -> None:
@@ -16,7 +17,7 @@ def generate_phase_b_report(output_path: str | Path) -> None:
         )
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    whitelist = json.loads(Path("outputs/phase_a/primary_whitelist.json").read_text(encoding="utf-8"))
+    whitelist = read_json("outputs/phase_a/primary_whitelist.json")
     baseline = _read_csv(phase_b / "baseline_results_summary.csv")
     comparison = _read_csv(phase_b / "compact_vs_full_summary.csv")
     ablation = _read_csv(phase_b / "modality_ablation_summary.csv")

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
 import joblib
 import pandas as pd
 
-from src.external.model_freezing import sha256_file
-from src.phase_d.mci_conversion import _fit_binary, binary_metrics, select_mci_index_visits
+from src.artifact_io import write_json
+from src.phase_d.mci_conversion import _fit_binary, binary_metrics, load_mci_index_visits
+from src.plotting import agg_pyplot
+from src.provenance import sha256_file
 
 
 def build_person_period_data(index_visits: pd.DataFrame, interval_ends: list[int]) -> pd.DataFrame:
@@ -44,26 +45,7 @@ def build_person_period_data(index_visits: pd.DataFrame, interval_ends: list[int
 
 def train_discrete_time_model(config: dict[str, Any]) -> dict[str, Any]:
     output = Path(config["project"]["output_dir"])
-    data = config["data"]
-    features = json.loads(Path(data["feature_profile"]).read_text(encoding="utf-8"))
-    required = [
-        data.get("subject_col", "RID"),
-        data.get("date_col", "EXAMDATE"),
-        data.get("label_col", "DX"),
-        *features,
-    ]
-    frame = pd.read_csv(
-        data["train_csv"],
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
-    index = select_mci_index_visits(
-        frame, features, data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"), data.get("label_col", "DX")
-    )
-    split = json.loads(Path(data["temporal_split"]).read_text(encoding="utf-8"))["splits"]
-    rid_to_split = {str(rid): name for name, ids in split.items() for rid in ids}
-    index["split"] = index["RID"].astype(str).map(rid_to_split)
+    index, features = load_mci_index_visits(config)
     periods = build_person_period_data(index, config["intervals"])
     model_features = [*features, "interval_index", "elapsed_months"]
     train, validation, test = (
@@ -96,9 +78,7 @@ def train_discrete_time_model(config: dict[str, Any]) -> dict[str, Any]:
         "d4_used_for_selection": False,
         "model_sha256": sha256_file(model_path),
     }
-    (output / "manifests" / "mci_discrete_time_manifest.json").write_text(
-        json.dumps(manifest, indent=2), encoding="utf-8"
-    )
+    write_json(output / "manifests" / "mci_discrete_time_manifest.json", manifest)
     risk = predict_cumulative_risk(pipeline, index[index["split"] == "temporal_test"], features, config["intervals"])
     risk.to_csv(output / "temporal_validation" / "mci_cumulative_risk_predictions.csv", index=False)
     _plot_risk(risk, output / "figures" / "mci_risk_by_horizon.png")
@@ -128,14 +108,7 @@ def predict_cumulative_risk(
 
 
 def _plot_risk(risk: pd.DataFrame, path: Path) -> None:
-    import os
-
-    os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-    import matplotlib
-
-    matplotlib.use("Agg", force=True)
-    import matplotlib.pyplot as plt
-
+    plt = agg_pyplot(path.parent)
     summary = risk.groupby("horizon_months")["cumulative_risk"].agg(["mean", "median"])
     fig, ax = plt.subplots(figsize=(12.8, 7.2))
     ax.plot(summary.index, summary["mean"], marker="o", label="Mean risk")

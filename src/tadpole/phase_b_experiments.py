@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
+from src.artifact_io import read_tadpole_table
 from src.data_schema import MULTICLASS_MAPPING, normalize_diagnosis
-from src.evaluation import compute_metrics
+from src.evaluation import compute_metrics, csv_safe_metrics
+from src.feature_groups import COMPACT_FEATURES
 from src.models.sklearn_models import predict_model, predict_proba_model
+from src.plotting import optional_agg_pyplot
 from src.tadpole.phase_b import (
-    COMPACT_FEATURES,
-    _csv_safe_metrics,
     fit_evaluate_partition,
     load_phase_b_cohort,
     make_subject_partitions,
@@ -31,12 +31,7 @@ def load_compact_cohort(config: dict[str, Any]) -> tuple[pd.DataFrame, list[str]
         data_cfg.get("label_col", "DX"),
     ]
     required = list(dict.fromkeys(identity + features))
-    frame = pd.read_csv(
-        data_cfg["raw_csv"],
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    frame = read_tadpole_table(data_cfg["raw_csv"], required)
     features = [feature for feature in features if feature in frame.columns]
     frame = select_baseline_records(
         frame,
@@ -91,7 +86,7 @@ def run_compact_vs_full(
                 )
                 metrics["data_source"] = source
                 metrics["intersection_subjects"] = len(concordant)
-                rows.append(_csv_safe_metrics(metrics))
+                rows.append(csv_safe_metrics(metrics))
     result = pd.DataFrame(rows)
     result.to_csv(output / "compact_vs_full_by_seed.csv", index=False)
     summary = summarize_results(result, ["data_source", "model", "task_mode", "missing_indicators"])
@@ -149,7 +144,7 @@ def run_phase_b_ablation(config: dict[str, Any], quick: bool = False) -> pd.Data
                 add_missing_indicators=True,
             )
             metrics.update({"group": group_name, "modalities": "|".join(modalities)})
-            rows.append(_csv_safe_metrics(metrics))
+            rows.append(csv_safe_metrics(metrics))
     result = pd.DataFrame(rows)
     result.to_csv(output / "modality_ablation_by_seed.csv", index=False)
     summary = summarize_results(result, ["group", "modalities"])
@@ -189,7 +184,7 @@ def run_phase_b_missing_modality(config: dict[str, Any], quick: bool = False) ->
                 "relative_drop": 0.0,
             }
         )
-        rows.append(_csv_safe_metrics(baseline))
+        rows.append(csv_safe_metrics(baseline))
         subject_col = config["data"].get("subject_col", "RID")
         test = frame[frame[subject_col].isin(partitions["test"])].copy()
         truth = test["label"].to_numpy()
@@ -219,7 +214,7 @@ def run_phase_b_missing_modality(config: dict[str, Any], quick: bool = False) ->
                     "relative_drop": (base_f1 - score) / base_f1 if base_f1 else np.nan,
                 }
             )
-            rows.append(_csv_safe_metrics(metrics))
+            rows.append(csv_safe_metrics(metrics))
     result = pd.DataFrame(rows)
     result.to_csv(output / "missing_modality_results_by_seed.csv", index=False)
     summary = summarize_results(result, ["masked_modality"])
@@ -250,12 +245,7 @@ def build_sparse_modality_cohort(config: dict[str, Any]) -> dict[str, Any]:
         data_cfg.get("date_col", "EXAMDATE"),
         data_cfg.get("label_col", "DX"),
     ]
-    frame = pd.read_csv(
-        data_cfg["raw_csv"],
-        usecols=lambda column: column in set(identity + features),
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    frame = read_tadpole_table(data_cfg["raw_csv"], identity + features)
     frame = frame.copy()
     frame["diagnosis"] = frame[data_cfg.get("label_col", "DX")].map(normalize_diagnosis)
     valid = frame.dropna(subset=["diagnosis"]).copy()
@@ -347,13 +337,8 @@ def _write_comparison_report(
 def _plot_grouped(frame: pd.DataFrame, x: str, y: str, path: Path) -> None:
     if frame.empty or y not in frame.columns:
         return
-    try:
-        os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-        import matplotlib
-
-        matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt
-    except ImportError:
+    plt = optional_agg_pyplot(path.parent)
+    if plt is None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(12, 5))

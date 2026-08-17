@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.artifact_io import read_tadpole_table
 from src.tadpole.dictionary_parser import load_tadpole_dictionary, match_dictionary_columns
 from src.tadpole.modality_mapper import infer_modality
 
@@ -77,11 +78,7 @@ def build_feature_catalog(
     """Build a field-level, dictionary-backed audit catalog."""
     if max_features_per_family < 1:
         raise ValueError("max_features_per_family must be at least 1")
-    frame = pd.read_csv(
-        data_path,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    frame = read_tadpole_table(data_path)
     dictionary = load_tadpole_dictionary(dictionary_path)
     matches = match_dictionary_columns(frame.columns, dictionary)
     d3_columns = _read_header(d3_path) if d3_path else set()

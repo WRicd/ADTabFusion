@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pandas as pd
+
+from src.artifact_io import read_json, read_tadpole_table, write_json
 
 CLINICAL_CANDIDATES = [
     "AGE",
@@ -32,7 +33,7 @@ def build_d3_feature_profiles(
     catalog_path: str | Path,
     output_dir: str | Path,
 ) -> dict[str, list[str]]:
-    whitelist = json.loads(Path(whitelist_path).read_text(encoding="utf-8"))
+    whitelist = read_json(whitelist_path)
     train_columns = pd.read_csv(train_csv, nrows=0).columns.tolist()
     d3_columns = pd.read_csv(d3_csv, nrows=0).columns.tolist()
     d3_set = set(d3_columns)
@@ -43,12 +44,8 @@ def build_d3_feature_profiles(
         "clinical_d3_core": [feature for feature in CLINICAL_CANDIDATES if feature in d3_set and feature in train_set],
     }
     required = list(dict.fromkeys([*whitelist, *compact_features, *CLINICAL_CANDIDATES]))
-    train = pd.read_csv(
-        train_csv, usecols=lambda column: column in required, low_memory=False, na_values=["", " ", "-4", "-4.0"]
-    )
-    d3 = pd.read_csv(
-        d3_csv, usecols=lambda column: column in required, low_memory=False, na_values=["", " ", "-4", "-4.0"]
-    )
+    train = read_tadpole_table(train_csv, required)
+    d3 = read_tadpole_table(d3_csv, required)
     audit_rows = []
     for feature in list(dict.fromkeys([*whitelist, *compact_features, *CLINICAL_CANDIDATES])):
         train_present = feature in train.columns
@@ -75,7 +72,7 @@ def build_d3_feature_profiles(
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     for name, features in profiles.items():
-        (output / f"{name}_features.json").write_text(json.dumps(features, indent=2), encoding="utf-8")
+        write_json(output / f"{name}_features.json", features)
     pd.DataFrame(audit_rows).to_csv(output / "d3_feature_profile_compatibility.csv", index=False)
     catalog = pd.read_csv(catalog_path)
     modality = dict(zip(catalog["column_name"].astype(str), catalog["modality"].astype(str)))

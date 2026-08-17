@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -10,9 +9,11 @@ import pandas as pd
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 
+from src.artifact_io import write_json
 from src.evaluation import compute_metrics
-from src.external.model_freezing import sha256_file, stable_subject_hash
 from src.phase_d.transition_model import ABLATIONS, load_transition_data
+from src.plotting import agg_pyplot
+from src.provenance import sha256_file, stable_subject_hash
 
 
 class ProbabilityCalibratedClassifier:
@@ -146,22 +147,13 @@ def calibrate_phase_d(config: dict[str, Any]) -> dict[str, Any]:
         "temporal_test_used_for_calibration_or_selection": False,
         "d3_or_d4_used_for_calibration_or_selection": False,
     }
-    (output / "manifests" / "calibrated_transition_manifest.json").write_text(
-        json.dumps(manifest, indent=2), encoding="utf-8"
-    )
+    write_json(output / "manifests" / "calibrated_transition_manifest.json", manifest)
     _plot_reliability(base, selected, temporal_test, features, output / "figures" / "reliability_diagram.png")
     return {"manifest": manifest, "results": results}
 
 
 def _plot_reliability(base, calibrated, frame: pd.DataFrame, features: list[str], path: Path) -> None:
-    import os
-
-    os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-    import matplotlib
-
-    matplotlib.use("Agg", force=True)
-    import matplotlib.pyplot as plt
-
+    plt = agg_pyplot(path.parent)
     fig, axes = plt.subplots(1, 3, figsize=(12.8, 4.2), sharex=True, sharey=True)
     truth = frame["label"].to_numpy()
     for class_id, name in enumerate(("CN", "MCI", "AD")):

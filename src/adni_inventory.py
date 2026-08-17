@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import csv
-import json
 import re
 from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
+
+from src.artifact_io import write_json
+from src.tadpole.modality_mapper import CSF_PATTERNS, PET_PATTERNS
 
 ID_CANDIDATES = ["RID", "PTID", "Subject", "SUBJECT", "LONIUID"]
 VISIT_CANDIDATES = [
@@ -96,25 +98,6 @@ CSF_CANDIDATES = [
     "pTau",
     "ELECSYS",
     "UPENNBIOMK",
-]
-CSF_PATTERNS = [
-    r"^ABETA($|_)",
-    r"^ABETA42($|_)",
-    r"^TAU($|_)",
-    r"^PTAU($|_)",
-    r"^PTAU181($|_)",
-    r"UPENNBIOMK",
-    r"ELECSYS",
-]
-PET_PATTERNS = [
-    r"^FDG($|_)",
-    r"^PIB($|_)",
-    r"^AV45($|_)",
-    r"AV1451",
-    r"FLORBETAPIR",
-    r"FLORTAUCIPIR",
-    r"SUVR",
-    r"CENTILOID",
 ]
 DICTIONARY_CANDIDATES = ["FLDNAME", "TBLNAME", "TEXT", "CODE", "TYPE", "UNITS"]
 
@@ -292,8 +275,8 @@ def write_inventory_outputs(
     for path in (output_md_path, output_json_path, availability_path):
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    output_json_path.write_text(json.dumps(inventory, ensure_ascii=False, indent=2), encoding="utf-8")
-    availability_path.write_text(json.dumps(availability, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_json(output_json_path, inventory, ensure_ascii=False)
+    write_json(availability_path, availability, ensure_ascii=False)
     output_md_path.write_text(render_inventory_markdown(inventory, availability, raw_dir), encoding="utf-8")
     return availability
 

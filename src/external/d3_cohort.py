@@ -5,6 +5,8 @@ from typing import Any
 
 import pandas as pd
 
+from src.artifact_io import read_tadpole_table
+
 
 def select_d3_index_records(
     frame: pd.DataFrame,
@@ -36,12 +38,7 @@ def prepare_d3_cohort(
     date_col: str = "EXAMDATE",
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     required = list(dict.fromkeys([subject_col, date_col, *features]))
-    frame = pd.read_csv(
-        d3_csv,
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    frame = read_tadpole_table(d3_csv, required)
     selected, selection_audit = select_d3_index_records(frame, subject_col, date_col)
     modality_coverage = {}
     for modality, columns in modality_groups.items():

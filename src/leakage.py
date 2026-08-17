@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from src.artifact_io import write_json
 
 ALWAYS_EXCLUDE = {
     "DX": "Target diagnosis label; including it would directly leak the answer.",
@@ -44,9 +45,7 @@ def write_leakage_report(config: dict[str, Any], df: pd.DataFrame, output_dir: s
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     blacklist = build_feature_blacklist(config, df)
-    (metrics_dir / "feature_blacklist.json").write_text(
-        json.dumps(blacklist, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    write_json(metrics_dir / "feature_blacklist.json", blacklist, ensure_ascii=False)
     task_mode = config.get("data", {}).get("task_mode", "all_visits")
     lines = [
         "# Leakage Check",

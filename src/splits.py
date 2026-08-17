@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+
+from src.artifact_io import write_json
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def make_subject_split(
     }
     metrics_dir = Path(output_dir) / "metrics"
     metrics_dir.mkdir(parents=True, exist_ok=True)
-    (metrics_dir / f"split_seed_{seed}.json").write_text(json.dumps(split, indent=2), encoding="utf-8")
+    write_json(metrics_dir / f"split_seed_{seed}.json", split)
     return split
 
 

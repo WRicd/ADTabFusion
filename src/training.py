@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
+from src.artifact_io import write_json
 from src.data_loader import load_tadpole_csv
 from src.data_schema import build_diagnosis_labels, select_task_rows
 from src.evaluation import compute_metrics
@@ -31,6 +31,7 @@ from src.feature_groups import (
 )
 from src.leakage import build_feature_blacklist, remove_blacklisted_features
 from src.models.sklearn_models import fit_model, predict_model, predict_proba_model
+from src.plotting import optional_agg_pyplot
 from src.preprocessing import build_preprocessor
 from src.splits import make_subject_split
 
@@ -286,7 +287,7 @@ def run_baselines(config: dict[str, Any], quick: bool = False) -> pd.DataFrame:
         joblib.dump(pipeline, output_dir / "models" / "best_model.joblib")
         pred_df.to_csv(output_dir / "reports" / "best_model_predictions.csv", index=False)
         meta = {"model": model_name, "seed": seed, "label_mapping": mapping}
-        (output_dir / "metrics" / "best_model.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        write_json(output_dir / "metrics" / "best_model.json", meta)
     return results
 
 
@@ -388,13 +389,8 @@ def run_missing_modality(config: dict[str, Any], quick: bool = False) -> pd.Data
 
 
 def _plot_bar(df: pd.DataFrame, x_col: str, y_col: str, path: Path) -> None:
-    try:
-        os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-        import matplotlib
-
-        matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt
-    except ImportError:
+    plt = optional_agg_pyplot(path.parent)
+    if plt is None:
         return
     if df.empty or y_col not in df.columns:
         return
@@ -456,7 +452,7 @@ def _write_split_distribution(
         "n_rows": int(len(full_df)),
         "n_subjects": int(full_df[subject_col].nunique()) if subject_col in full_df.columns else None,
     }
-    (metrics_dir / f"split_distribution_seed_{seed}.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    write_json(metrics_dir / f"split_distribution_seed_{seed}.json", summary)
 
 
 def _save_eval_figures(
@@ -467,16 +463,11 @@ def _save_eval_figures(
     figure_dir: Path,
     tag: str,
 ) -> None:
-    try:
-        os.environ.setdefault("MPLCONFIGDIR", str(figure_dir / ".matplotlib"))
-        import matplotlib
-
-        matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt
-        from sklearn.metrics import auc, confusion_matrix, roc_curve
-        from sklearn.preprocessing import label_binarize
-    except ImportError:
+    plt = optional_agg_pyplot(figure_dir)
+    if plt is None:
         return
+    from sklearn.metrics import auc, confusion_matrix, roc_curve
+    from sklearn.preprocessing import label_binarize
 
     figure_dir.mkdir(parents=True, exist_ok=True)
     cm = confusion_matrix(y_true, y_pred, labels=labels)

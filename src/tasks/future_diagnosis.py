@@ -6,6 +6,7 @@ from typing import Any
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from src.artifact_io import read_tadpole_table
 from src.data_schema import MULTICLASS_MAPPING, normalize_diagnosis
 
 PAIR_METADATA = ["RID", "source_date", "future_date", "forecast_months", "target_diagnosis", "label"]
@@ -109,12 +110,7 @@ def load_longitudinal_source(
     label_col: str = "DX",
 ) -> pd.DataFrame:
     required = list(dict.fromkeys([subject_col, date_col, label_col, *features]))
-    frame = pd.read_csv(
-        csv_path,
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    frame = read_tadpole_table(csv_path, required)
     missing = sorted(set(required) - set(frame.columns))
     if missing:
         raise ValueError(f"Longitudinal source is missing fields: {', '.join(missing)}")

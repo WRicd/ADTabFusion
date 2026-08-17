@@ -5,6 +5,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.artifact_io import read_tadpole_table
 from src.external.d3_cohort import select_d3_index_records
 
 LABEL_TO_ID = {"CN": 0, "MCI": 1, "AD": 2}
@@ -40,12 +41,7 @@ def build_d3_d4_evaluation_cohort(
     d4_label_col: str = "Diagnosis",
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     required_d3 = list(dict.fromkeys([subject_col, d3_date_col, *horizon_features]))
-    d3_raw = pd.read_csv(
-        d3_csv,
-        usecols=lambda column: column in required_d3,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    d3_raw = read_tadpole_table(d3_csv, required_d3)
     d3, _ = select_d3_index_records(d3_raw, subject_col, d3_date_col)
     d3 = d3.rename(columns={d3_date_col: "D3_EXAMDATE"})
     d4 = pd.read_csv(

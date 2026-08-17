@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import hashlib
-import json
 import platform
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -13,24 +10,13 @@ import pandas as pd
 import sklearn
 from sklearn.pipeline import Pipeline
 
+from src.artifact_io import read_json, read_tadpole_table, write_json
 from src.data_schema import MULTICLASS_MAPPING, normalize_diagnosis
-from src.feature_groups import infer_feature_types
+from src.feature_groups import CATALOG_MODALITY_GROUPS, infer_feature_types
 from src.models.sklearn_models import fit_model
 from src.preprocessing import build_preprocessor
+from src.provenance import git_commit_hash, sha256_file, stable_subject_hash
 from src.tadpole.phase_b import load_catalog_groups, select_baseline_records
-
-
-def sha256_file(path: str | Path) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def stable_subject_hash(subjects: pd.Series) -> str:
-    values = sorted({str(value) for value in subjects.dropna()})
-    return hashlib.sha256("\n".join(values).encode("utf-8")).hexdigest()
 
 
 def load_baseline_training_cohort(
@@ -42,12 +28,7 @@ def load_baseline_training_cohort(
     label_col: str = "DX",
 ) -> pd.DataFrame:
     required = list(dict.fromkeys([subject_col, visit_col, date_col, label_col, *features]))
-    frame = pd.read_csv(
-        train_csv,
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    frame = read_tadpole_table(train_csv, required)
     missing = sorted(set(required) - set(frame.columns))
     if missing:
         raise ValueError(f"Training table is missing frozen fields: {', '.join(missing)}")
@@ -85,7 +66,7 @@ def freeze_direct_transfer_models(config: dict[str, Any], config_path: str | Pat
     manifest_dir = output / "manifests"
     model_dir.mkdir(parents=True, exist_ok=True)
     manifest_dir.mkdir(parents=True, exist_ok=True)
-    full_features = json.loads(Path(data["whitelist"]).read_text(encoding="utf-8"))
+    full_features = read_json(data["whitelist"])
     compact_features = list(config["candidates"]["compact"]["features"])
     all_features = list(dict.fromkeys([*full_features, *compact_features]))
     cohort = load_baseline_training_cohort(
@@ -101,7 +82,7 @@ def freeze_direct_transfer_models(config: dict[str, Any], config_path: str | Pat
     decision_path = output / "audit" / "d3_modality_coverage.json"
     if not decision_path.exists():
         raise FileNotFoundError("Run audit_d3_schema.py before freezing Phase C models.")
-    decision = json.loads(decision_path.read_text(encoding="utf-8"))["deployment"]
+    decision = read_json(decision_path)["deployment"]
     candidates = {
         "full_hist_gradient_boosting": {
             "features": full_features,
@@ -143,10 +124,9 @@ def freeze_direct_transfer_models(config: dict[str, Any], config_path: str | Pat
             config_path,
             model_path,
         )
-        manifest_path = manifest_dir / f"{role}_model_manifest.json"
-        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        write_json(manifest_dir / f"{role}_model_manifest.json", manifest)
         manifests[role] = manifest
-    (manifest_dir / "deployment_decision.json").write_text(json.dumps(decision, indent=2), encoding="utf-8")
+    write_json(manifest_dir / "deployment_decision.json", decision)
     return manifests
 
 
@@ -160,10 +140,7 @@ def _build_manifest(
     config_path: str | Path,
     model_path: Path,
 ) -> dict[str, Any]:
-    try:
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = None
+    commit = git_commit_hash()
     feature_to_modality = {feature: modality for modality, features in spec["groups"].items() for feature in features}
     return {
         "model_id": f"phase_c_direct_{role}_{candidate_id}",
@@ -190,28 +167,6 @@ def _build_manifest(
 
 
 def _compact_modality_mapping(features: list[str]) -> dict[str, list[str]]:
-    groups = {
-        "demographic": ["AGE", "PTGENDER", "PTEDUCAT"],
-        "cognitive": [
-            "MMSE",
-            "ADAS11",
-            "ADAS13",
-            "CDRSB",
-            "RAVLT_immediate",
-            "RAVLT_learning",
-            "RAVLT_forgetting",
-            "RAVLT_perc_forgetting",
-            "FAQ_bl",
-        ],
-        "mri_structural": [
-            "Ventricles",
-            "Hippocampus",
-            "WholeBrain",
-            "Entorhinal",
-            "Fusiform",
-            "MidTemp",
-            "ICV",
-        ],
-        "genetic": ["APOE4"],
+    return {
+        name: [feature for feature in values if feature in features] for name, values in CATALOG_MODALITY_GROUPS.items()
     }
-    return {name: [feature for feature in values if feature in features] for name, values in groups.items()}

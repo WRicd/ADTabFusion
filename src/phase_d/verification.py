@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -8,10 +7,11 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from src.artifact_io import read_json, read_tadpole_table, write_json
 from src.external.d3_cohort import select_d3_index_records
 from src.external.inference import predict_with_frozen_pipeline, probability_frame
-from src.external.model_freezing import sha256_file
 from src.external.schema_alignment import align_to_frozen_schema
+from src.provenance import sha256_file
 
 
 def verify_phase_c_artifacts(root: str | Path = "outputs/phase_c") -> dict[str, Any]:
@@ -44,7 +44,7 @@ def verify_phase_c_artifacts(root: str | Path = "outputs/phase_c") -> dict[str, 
         _check(checks, f"{role}_manifest_exists", manifest_path.exists(), str(manifest_path))
         if not model_path.exists() or not manifest_path.exists():
             continue
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest = read_json(manifest_path)
         manifests[role] = manifest
         model_hash = sha256_file(model_path)
         config_hash = sha256_file(config_path)
@@ -63,9 +63,7 @@ def verify_phase_c_artifacts(root: str | Path = "outputs/phase_c") -> dict[str, 
             dict.fromkeys(feature for item in direct_manifests.values() for feature in item["feature_order"])
         )
         required = ["RID", "EXAMDATE", *features]
-        raw = pd.read_csv(
-            d3_path, usecols=lambda column: column in required, low_memory=False, na_values=["", " ", "-4", "-4.0"]
-        )
+        raw = read_tadpole_table(d3_path, required)
         cohort, _ = select_d3_index_records(raw)
         for role in direct_manifests:
             reproduced, _ = predict_with_frozen_pipeline(
@@ -109,7 +107,7 @@ def verify_phase_c_artifacts(root: str | Path = "outputs/phase_c") -> dict[str, 
 def write_verification_outputs(result: dict[str, Any], output_dir: str | Path) -> None:
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
-    (output / "phase_c_artifact_hashes.json").write_text(json.dumps(result["hashes"], indent=2), encoding="utf-8")
+    write_json(output / "phase_c_artifact_hashes.json", result["hashes"])
     lines = [
         "# Phase C Verification Gate",
         "",
