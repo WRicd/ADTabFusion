@@ -1,7 +1,6 @@
 import ast
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 FORBIDDEN_PREFIXES = ("src.models", "src.training", "src.phase_d", "scripts.")
 FORBIDDEN_CALLS = {"fit", "fit_transform", "calibrate", "dump", "to_csv", "to_json", "write_text", "write_bytes"}

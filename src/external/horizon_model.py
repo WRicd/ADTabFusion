@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import platform
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -39,9 +39,7 @@ def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Pa
         for split_name, frame in (("val", val), ("test", test)):
             probability = pipeline.predict_proba(frame[features])
             predicted = pipeline.predict(frame[features])
-            metrics = compute_metrics(
-                frame["label"].to_numpy(), predicted, probability, labels=[0, 1, 2]
-            )
+            metrics = compute_metrics(frame["label"].to_numpy(), predicted, probability, labels=[0, 1, 2])
             rows.append(
                 {
                     "model": model_name,
@@ -56,9 +54,9 @@ def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Pa
     evaluation_dir = output / "evaluation"
     evaluation_dir.mkdir(parents=True, exist_ok=True)
     metrics_frame.to_csv(evaluation_dir / "horizon_aware_internal_metrics.csv", index=False)
-    selection = metrics_frame[
-        (metrics_frame["split"] == "val") & (metrics_frame["horizon"] == "overall")
-    ].sort_values(["macro_f1", "balanced_accuracy"], ascending=False)
+    selection = metrics_frame[(metrics_frame["split"] == "val") & (metrics_frame["horizon"] == "overall")].sort_values(
+        ["macro_f1", "balanced_accuracy"], ascending=False
+    )
     if selection.empty:
         raise RuntimeError("No horizon-aware candidate produced validation metrics.")
     selected_name = str(selection.iloc[0]["model"])
@@ -70,9 +68,7 @@ def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Pa
     model_path = model_dir / "horizon_aware_pipeline.joblib"
     joblib.dump(final_pipeline, model_path)
     try:
-        commit = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-        ).stdout.strip()
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         commit = None
     manifest = {
@@ -96,19 +92,15 @@ def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Pa
         "code_commit_hash": commit,
         "python_version": platform.python_version(),
         "sklearn_version": sklearn.__version__,
-        "creation_timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "creation_timestamp_utc": datetime.now(UTC).isoformat(),
         "selection_data": "D1/D2 validation subjects only",
         "d4_used_for_training_or_selection": False,
     }
-    (manifest_dir / "horizon_aware_manifest.json").write_text(
-        json.dumps(manifest, indent=2), encoding="utf-8"
-    )
+    (manifest_dir / "horizon_aware_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
 
 
-def _fit_pipeline(
-    frame: pd.DataFrame, features: list[str], model_name: str, config: dict[str, Any]
-) -> Pipeline:
+def _fit_pipeline(frame: pd.DataFrame, features: list[str], model_name: str, config: dict[str, Any]) -> Pipeline:
     numeric, categorical = infer_feature_types(frame, features)
     preprocessor = build_preprocessor(
         numeric,
@@ -128,8 +120,12 @@ def _horizon_metric_rows(
     pipeline: Pipeline,
     features: list[str],
 ) -> list[dict[str, Any]]:
-    bins = [(-float("inf"), 12, "0-12 months"), (12, 24, "12-24 months"),
-            (24, 36, "24-36 months"), (36, float("inf"), ">36 months")]
+    bins = [
+        (-float("inf"), 12, "0-12 months"),
+        (12, 24, "12-24 months"),
+        (24, 36, "24-36 months"),
+        (36, float("inf"), ">36 months"),
+    ]
     rows = []
     for low, high, name in bins:
         subset = frame[(frame["forecast_months"] > low) & (frame["forecast_months"] <= high)]
@@ -140,14 +136,10 @@ def _horizon_metric_rows(
             subset["label"].to_numpy(), pipeline.predict(subset[features]), probability, labels=[0, 1, 2]
         )
         rows.append(
-            {"model": model_name, "split": split_name, "horizon": name,
-             "n_rows": len(subset), **_csv_metrics(metrics)}
+            {"model": model_name, "split": split_name, "horizon": name, "n_rows": len(subset), **_csv_metrics(metrics)}
         )
     return rows
 
 
 def _csv_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
-    return {
-        key: json.dumps(value) if isinstance(value, (list, dict)) else value
-        for key, value in metrics.items()
-    }
+    return {key: json.dumps(value) if isinstance(value, list | dict) else value for key, value in metrics.items()}

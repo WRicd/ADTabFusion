@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pandas as pd
 import streamlit as st
 
@@ -17,5 +15,4 @@ def artifact_table(records: list[dict[str, object]]) -> None:
         if "sha256" in row and row["sha256"]:
             row["sha256"] = str(row["sha256"])[:12]
         sanitized.append(row)
-    st.dataframe(pd.DataFrame(sanitized), use_container_width=True, hide_index=True)
-
+    st.dataframe(pd.DataFrame(sanitized), width="stretch", hide_index=True)

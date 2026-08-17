@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 from typing import Any
@@ -95,9 +94,7 @@ def run_compact_vs_full(
                 rows.append(_csv_safe_metrics(metrics))
     result = pd.DataFrame(rows)
     result.to_csv(output / "compact_vs_full_by_seed.csv", index=False)
-    summary = summarize_results(
-        result, ["data_source", "model", "task_mode", "missing_indicators"]
-    )
+    summary = summarize_results(result, ["data_source", "model", "task_mode", "missing_indicators"])
     summary.to_csv(output / "compact_vs_full_summary.csv", index=False)
     _write_comparison_report(
         output / "compact_vs_full_report.md",
@@ -166,9 +163,7 @@ def run_phase_b_ablation(config: dict[str, Any], quick: bool = False) -> pd.Data
     return result
 
 
-def run_phase_b_missing_modality(
-    config: dict[str, Any], quick: bool = False
-) -> pd.DataFrame:
+def run_phase_b_missing_modality(config: dict[str, Any], quick: bool = False) -> pd.DataFrame:
     frame, all_features, groups, _ = load_phase_b_cohort(config, persist=False)
     output = Path(config["project"].get("output_dir", "outputs/phase_b"))
     seeds = [42] if quick else config["project"].get("seed_list", [42])
@@ -204,9 +199,7 @@ def run_phase_b_missing_modality(
             else:
                 mask_columns = groups.get(mask_name, [])
             if not mask_columns:
-                rows.append(
-                    {"masked_modality": mask_name, "seed": seed, "skipped": "no primary features"}
-                )
+                rows.append({"masked_modality": mask_name, "seed": seed, "skipped": "no primary features"})
                 continue
             X = test[all_features].copy()
             X.loc[:, mask_columns] = np.nan
@@ -230,9 +223,8 @@ def run_phase_b_missing_modality(
     result = pd.DataFrame(rows)
     result.to_csv(output / "missing_modality_results_by_seed.csv", index=False)
     summary = summarize_results(result, ["masked_modality"])
-    drop_summary = (
-        result.groupby("masked_modality", as_index=False)[["absolute_drop", "relative_drop"]]
-        .mean(numeric_only=True)
+    drop_summary = result.groupby("masked_modality", as_index=False)[["absolute_drop", "relative_drop"]].mean(
+        numeric_only=True
     )
     summary = summary.merge(drop_summary, on="masked_modality", how="left")
     summary.to_csv(output / "missing_modality_summary.csv", index=False)
@@ -251,11 +243,7 @@ def build_sparse_modality_cohort(config: dict[str, Any]) -> dict[str, Any]:
     catalog = pd.read_csv(data_cfg["feature_catalog"])
     features = catalog.loc[catalog["modality"] == modality, "column_name"].astype(str).tolist()
     if modality == "csf":
-        features = [
-            feature
-            for feature in features
-            if feature.upper().startswith(("ABETA", "TAU", "PTAU"))
-        ]
+        features = [feature for feature in features if feature.upper().startswith(("ABETA", "TAU", "PTAU"))]
     identity = [
         data_cfg.get("subject_col", "RID"),
         data_cfg.get("visit_col", "VISCODE"),
@@ -324,10 +312,7 @@ def _render_sparse_summary(summary: dict[str, Any]) -> str:
         "## Diagnosis distribution",
         "",
     ]
-    lines.extend(
-        f"- {diagnosis}: {count} visits"
-        for diagnosis, count in summary["diagnosis_distribution"].items()
-    )
+    lines.extend(f"- {diagnosis}: {count} visits" for diagnosis, count in summary["diagnosis_distribution"].items())
     lines.extend(["", "## Modeling value", "", summary["modeling_value"], ""])
     return "\n".join(lines)
 

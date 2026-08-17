@@ -6,14 +6,17 @@ from dashboard.artifacts import artifact, load_json, safe_artifact_name
 from dashboard.components import artifact_table, empty_state, page_header, section_header, status_badge
 from dashboard.i18n import bilingual, get_language
 
-
 lang = get_language()
 page_header(
-    bilingual("审计与冻结", "AUDIT AND FREEZE", lang),
+    bilingual("审计与保存", "AUDIT AND SAVE", lang),
     bilingual("可复现性", "Reproducibility", lang),
-    bilingual("展示完成标记、冻结注册表和安全化的 artifact 标识。", "Completion markers, frozen registry entries, and sanitized artifact identifiers.", lang),
+    bilingual(
+        "展示完成标记、保存注册表和安全化的 artifact 标识。",
+        "Completion markers, saved registry entries, and sanitized artifact identifiers.",
+        lang,
+    ),
 )
-status_badge(bilingual("Phase D 已冻结", "Phase D frozen", lang), "success")
+status_badge(bilingual("Phase D", lang), "success")
 
 section_header(bilingual("阶段报告", "Phase reports", lang))
 reports = [
@@ -24,8 +27,8 @@ reports = [
 ]
 artifact_table(reports)
 
-section_header(bilingual("冻结注册表", "Frozen registry", lang))
-registry, error = load_json(artifact("phase_d/manifests/phase_d_frozen_registry.json"))
+section_header(bilingual("保存注册表", "Saved registry", lang))
+registry, error = load_json(artifact("phase_d/manifests/phase_d_saved_registry.json"))
 if error:
     empty_state(error)
 else:
@@ -34,13 +37,25 @@ else:
     if isinstance(raw_entries, dict):
         for name, value in raw_entries.items():
             if isinstance(value, dict):
-                records.append({"artifact": name, "path": value.get("path", name), "sha256": value.get("sha256", value.get("hash", ""))})
+                records.append(
+                    {
+                        "artifact": name,
+                        "path": value.get("path", name),
+                        "sha256": value.get("sha256", value.get("hash", "")),
+                    }
+                )
             else:
                 records.append({"artifact": name, "path": safe_artifact_name(str(value))})
     elif isinstance(raw_entries, list):
         for index, value in enumerate(raw_entries):
             if isinstance(value, dict):
-                records.append({"artifact": value.get("name", f"artifact_{index + 1}"), "path": value.get("path", ""), "sha256": value.get("sha256", value.get("hash", ""))})
+                records.append(
+                    {
+                        "artifact": value.get("name", f"artifact_{index + 1}"),
+                        "path": value.get("path", ""),
+                        "sha256": value.get("sha256", value.get("hash", "")),
+                    }
+                )
     if records:
         artifact_table(records)
     else:

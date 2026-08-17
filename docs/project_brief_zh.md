@@ -32,5 +32,4 @@ AD-TabFusion 使用纵向多模态临床表格数据，预测未来 CN/MCI/AD �
 
 ## 展示方式
 
-Streamlit Dashboard 提供中英文切换，仅读取 `outputs` 中冻结 CSV/JSON。所有公开页面和截图只展示聚合结果，不出现 RID、PTID 或参与者级记录。
-
+Streamlit Dashboard 提供中英文切换，仅读取 `outputs` 中的 CSV/JSON。所有公开页面和截图只展示聚合结果，不出现 RID、PTID 或参与者级记录。

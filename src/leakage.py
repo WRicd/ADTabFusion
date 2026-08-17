@@ -6,7 +6,6 @@ from typing import Any
 
 import pandas as pd
 
-
 ALWAYS_EXCLUDE = {
     "DX": "Target diagnosis label; including it would directly leak the answer.",
     "DXCHANGE": "Diagnosis transition code derived from diagnosis state; leaks target information.",
@@ -30,17 +29,13 @@ def build_feature_blacklist(config: dict[str, Any], df: pd.DataFrame | None = No
     return blacklist
 
 
-def remove_blacklisted_features(
-    features: list[str], blacklist: dict[str, str]
-) -> list[str]:
+def remove_blacklisted_features(features: list[str], blacklist: dict[str, str]) -> list[str]:
     """Remove leakage columns from a feature list while preserving order."""
     blocked = set(blacklist)
     return [feature for feature in features if feature not in blocked]
 
 
-def write_leakage_report(
-    config: dict[str, Any], df: pd.DataFrame, output_dir: str | Path
-) -> dict[str, str]:
+def write_leakage_report(config: dict[str, Any], df: pd.DataFrame, output_dir: str | Path) -> dict[str, str]:
     """Persist leakage blacklist JSON and a markdown explanation."""
     output = Path(output_dir)
     metrics_dir = output / "metrics"
@@ -77,4 +72,3 @@ def write_leakage_report(
     )
     (reports_dir / "leakage_check.md").write_text("\n".join(lines), encoding="utf-8")
     return blacklist
-

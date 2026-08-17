@@ -29,3 +29,35 @@ outputs/phase_d/reports/high_confidence_errors.csv
 outputs/reports/best_model_predictions.csv
 outputs/reports/error_cases.csv
 outputs/metrics/split_seed_*.json
+outputs/metrics/split_distribution_seed_*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MLflow experiment database
+outputs/mlruns/
+mlruns/
+mlflow.db
+
+# Exploratory GPU/deep-model outputs (frozen phase_d is tracked, this is not)
+outputs/phase_d_gpu/
+outputs/_repro_check/
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.env.local

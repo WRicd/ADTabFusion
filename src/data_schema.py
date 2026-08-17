@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 MULTICLASS_MAPPING = {"CN": 0, "MCI": 1, "AD": 2}
 BINARY_MAPPING = {"CN": 0, "AD": 1}
 
@@ -52,9 +51,7 @@ def build_diagnosis_labels(
     work["label"] = work["_diagnosis"].map(mapping).astype(int)
     report_dir = Path(output_dir) / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
-    (report_dir / "label_mapping.json").write_text(
-        json.dumps(mapping, indent=2), encoding="utf-8"
-    )
+    (report_dir / "label_mapping.json").write_text(json.dumps(mapping, indent=2), encoding="utf-8")
     return work, "label", mapping
 
 

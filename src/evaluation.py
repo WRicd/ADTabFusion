@@ -6,8 +6,8 @@ import numpy as np
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
-    confusion_matrix,
     cohen_kappa_score,
+    confusion_matrix,
     f1_score,
     log_loss,
     precision_recall_fscore_support,
@@ -34,9 +34,7 @@ def compute_metrics(
             if len(unique) == 2:
                 score = roc_auc_score(y_true, y_proba[:, 1])
             else:
-                score = roc_auc_score(
-                    y_true, y_proba, multi_class="ovr", average="macro", labels=labels
-                )
+                score = roc_auc_score(y_true, y_proba, multi_class="ovr", average="macro", labels=labels)
             result["roc_auc_ovr"] = float(score)
         except ValueError:
             result["roc_auc_ovr"] = None
@@ -60,7 +58,5 @@ def compute_metrics(
         result[f"precision_class_{label}"] = float(precision[index])
         result[f"recall_class_{label}"] = float(recall[index])
         result[f"f1_class_{label}"] = float(per_class_f1[index])
-    result["confusion_matrix"] = confusion_matrix(
-        y_true, y_pred, labels=metric_labels
-    ).tolist()
+    result["confusion_matrix"] = confusion_matrix(y_true, y_pred, labels=metric_labels).tolist()
     return result

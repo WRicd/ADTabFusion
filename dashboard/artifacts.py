@@ -7,7 +7,6 @@ from typing import Any, Iterable
 import pandas as pd
 import streamlit as st
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ROOT = PROJECT_ROOT / "outputs"
 
@@ -57,4 +56,3 @@ def safe_artifact_name(path: str | Path) -> str:
 def ensure_columns(frame: pd.DataFrame, columns: Iterable[str]) -> pd.DataFrame:
     available = [column for column in columns if column in frame.columns]
     return frame.loc[:, available].copy()
-

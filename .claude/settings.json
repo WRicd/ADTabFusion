@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv)",
+      "Bash(python -c ' *)",
+      "Bash(python -m pytest tests/test_deep_tabular.py tests/test_ensemble.py tests/test_tuning.py tests/test_tuning_never_sees_test_split.py tests/test_model_defaults_unchanged.py --basetemp=\".pytest_tmp\" -q)",
+      "Bash(python -m pytest tests/ --basetemp=\".pytest_tmp\" -q -k \"not test_csv_loader\")",
+      "Bash(timeout 1800 python scripts/train_transition_aware_model.py --config configs/phase_d_transition_gpu.yaml)",
+      "Bash(nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader)",
+      "Bash(python -m pytest tests/test_deep_tabular.py tests/test_ensemble.py --basetemp=\".pytest_tmp\" -q)"
+    ]
+  }
+}

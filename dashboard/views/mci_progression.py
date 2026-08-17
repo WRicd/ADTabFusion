@@ -1,21 +1,31 @@
 from __future__ import annotations
 
 import altair as alt
-import pandas as pd
 import streamlit as st
 
 from dashboard.artifacts import artifact, load_csv
-from dashboard.charts import show_chart
-from dashboard.components import chart_heading, empty_state, interpretation_box, limitation_banner, metric_card, page_header, section_header, status_badge
+from dashboard.charts import series_color, show_chart, table_view
+from dashboard.components import (
+    chart_heading,
+    empty_state,
+    interpretation_box,
+    limitation_banner,
+    metric_card,
+    page_header,
+    section_header,
+    status_badge,
+)
 from dashboard.i18n import bilingual, get_language
-from dashboard.theme import COLORS
-
 
 lang = get_language()
 page_header(
     bilingual("临床风险层", "CLINICAL RISK LAYER", lang),
     bilingual("MCI 进展风险", "MCI Progression Risk", lang),
-    bilingual("在预设 12、24、36、48 个月窗口内估计从 MCI 向 AD 的进展。", "Progression from MCI to AD over prespecified 12, 24, 36, and 48-month windows.", lang),
+    bilingual(
+        "在预设 12、24、36、48 个月窗口内估计从 MCI 向 AD 的进展。",
+        "Progression from MCI to AD over prespecified 12, 24, 36, and 48-month windows.",
+        lang,
+    ),
 )
 status_badge(bilingual("锁定时间测试", "Locked temporal test", lang), "success")
 
@@ -30,7 +40,11 @@ else:
     for column, (_, row) in zip(cards, metrics.sort_values("horizon_months").iterrows()):
         horizon = int(row["horizon_months"])
         with column:
-            metric_card(f"{horizon}-month ROC-AUC", f"{row['roc_auc']:.3f}", f"n={int(row['n_subjects'])} · PR-AUC {row['pr_auc']:.3f}")
+            metric_card(
+                f"{horizon}-month ROC-AUC",
+                f"{row['roc_auc']:.3f}",
+                f"n={int(row['n_subjects'])} · PR-AUC {row['pr_auc']:.3f}",
+            )
 
     section_header(bilingual("跨时间窗表现", "Performance by horizon", lang))
     plot = metrics.melt(
@@ -43,28 +57,43 @@ else:
     plot["Metric"] = plot["Metric"].map(names)
     chart_heading(
         bilingual("锁定测试表现", "Locked test performance", lang),
-        bilingual("较长时间窗的样本量下降，48 个月结果需谨慎解读。", "Sample size falls at longer horizons; interpret the 48-month estimate cautiously.", lang),
+        bilingual(
+            "较长时间窗的样本量下降，48 个月结果需谨慎解读。",
+            "Sample size falls at longer horizons; interpret the 48-month estimate cautiously.",
+            lang,
+        ),
     )
     chart = (
         alt.Chart(plot)
-        .mark_line(point=alt.OverlayMarkDef(size=70), strokeWidth=2.5)
+        .mark_line(point=alt.OverlayMarkDef(size=70), strokeWidth=2)
         .encode(
             x=alt.X("horizon_months:O", title="Horizon (months)", sort=[12, 24, 36, 48]),
             y=alt.Y("Score:Q", scale=alt.Scale(domain=[0.4, 1.0]), title="Score"),
-            color=alt.Color("Metric:N", scale=alt.Scale(domain=list(names.values()), range=[COLORS["blue"], COLORS["teal"], COLORS["amber"]]), legend=alt.Legend(orient="top")),
-            tooltip=[alt.Tooltip("horizon_months:O", title="Months"), "Metric:N", alt.Tooltip("Score:Q", format=".3f"), "n_subjects:Q"],
+            color=series_color("Metric:N", list(names.values())),
+            tooltip=[
+                alt.Tooltip("horizon_months:O", title="Months"),
+                "Metric:N",
+                alt.Tooltip("Score:Q", format=".3f"),
+                "n_subjects:Q",
+            ],
         )
         .properties(height=330)
     )
     show_chart(chart)
+    table_view(
+        metrics[["horizon_months", "n_subjects", "roc_auc", "pr_auc", "macro_f1"]].round(3),
+        bilingual("以表格查看", "View as table", lang),
+    )
 
 cohort, cohort_error = load_csv(artifact("phase_d/cohorts/mci_landmark_summary.csv"))
 if not cohort_error:
     section_header(bilingual("可评估队列", "Eligible cohorts", lang))
-    display = cohort[["horizon_months", "eligible_subjects", "converters", "non_converters", "censored_subjects", "class_prevalence"]].copy()
+    display = cohort[
+        ["horizon_months", "eligible_subjects", "converters", "non_converters", "censored_subjects", "class_prevalence"]
+    ].copy()
     display.columns = ["Horizon (months)", "Eligible", "Converters", "Non-converters", "Censored", "Prevalence"]
     display["Prevalence"] = display["Prevalence"].map(lambda value: f"{value:.1%}")
-    st.dataframe(display, use_container_width=True, hide_index=True)
+    st.dataframe(display, width="stretch", hide_index=True)
 
 interpretation_box(
     bilingual(

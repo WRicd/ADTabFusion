@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import altair as alt
-import pandas as pd
 import streamlit as st
 
 from dashboard.artifacts import artifact, load_csv
-from dashboard.charts import show_chart
-from dashboard.components import empty_state, interpretation_box, limitation_banner, metric_card, page_header, section_header, status_badge
+from dashboard.charts import series_color, show_chart, table_view, value_labels
+from dashboard.components import (
+    empty_state,
+    interpretation_box,
+    limitation_banner,
+    metric_card,
+    page_header,
+    section_header,
+    status_badge,
+)
 from dashboard.i18n import bilingual, get_language
-from dashboard.theme import COLORS
-
 
 EXPLORATORY_LABEL = "Exploratory post-hoc replay — not independent confirmatory validation"
 
@@ -53,28 +58,41 @@ else:
     section_header(bilingual("完整回放与选择性回放", "Full and selective replay", lang))
     plot = metrics.copy()
     plot["Analysis"] = plot["analysis"].map({"all": "All", "validation_frozen_selective": "Frozen selective"})
-    melted = plot.melt(id_vars=["Analysis", "coverage"], value_vars=["macro_f1", "balanced_accuracy", "roc_auc_ovr"], var_name="Metric", value_name="Score")
-    melted["Metric"] = melted["Metric"].map({"macro_f1": "Macro F1", "balanced_accuracy": "Balanced accuracy", "roc_auc_ovr": "ROC-AUC OvR"})
-    chart = (
-        alt.Chart(melted)
-        .mark_bar(cornerRadiusEnd=3)
-        .encode(
-            x=alt.X("Analysis:N", title=None),
-            xOffset="Metric:N",
-            y=alt.Y("Score:Q", scale=alt.Scale(domain=[0, 1.0]), title="Score"),
-            color=alt.Color("Metric:N", scale=alt.Scale(range=[COLORS["blue"], COLORS["teal"], COLORS["amber"]]), legend=alt.Legend(orient="top")),
-            tooltip=["Analysis:N", "Metric:N", alt.Tooltip("Score:Q", format=".3f"), alt.Tooltip("coverage:Q", format=".1%")],
-        )
-        .properties(height=310)
+    melted = plot.melt(
+        id_vars=["Analysis", "coverage"],
+        value_vars=["macro_f1", "balanced_accuracy", "roc_auc_ovr"],
+        var_name="Metric",
+        value_name="Score",
     )
-    show_chart(chart)
+    metric_order = ["Macro F1", "Balanced accuracy", "ROC-AUC OvR"]
+    melted["Metric"] = melted["Metric"].map(
+        {"macro_f1": "Macro F1", "balanced_accuracy": "Balanced accuracy", "roc_auc_ovr": "ROC-AUC OvR"}
+    )
+    replay_base = alt.Chart(melted).encode(
+        x=alt.X("Analysis:N", title=None),
+        xOffset=alt.XOffset("Metric:N", sort=metric_order),
+        y=alt.Y("Score:Q", scale=alt.Scale(domain=[0, 1.0]), title="Score"),
+        tooltip=[
+            "Analysis:N",
+            "Metric:N",
+            alt.Tooltip("Score:Q", format=".3f"),
+            alt.Tooltip("coverage:Q", format=".1%"),
+        ],
+    )
+    bars = replay_base.mark_bar(cornerRadiusEnd=3).encode(color=series_color("Metric:N", metric_order))
+    chart = (bars + value_labels(replay_base, "Score", fmt=".2f", dy=-8, align="center")).properties(height=310)
+    show_chart(chart)  # type: ignore[arg-type]
+    table_view(
+        melted.pivot(index="Analysis", columns="Metric", values="Score").round(3).reset_index(),
+        bilingual("以表格查看", "View as table", lang),
+    )
 
     if not selective.empty:
         row = selective.iloc[0]
         interpretation_box(
             bilingual(
-                f"验证集冻结的选择性规则在 D4 回放中保留 {row['coverage']:.1%}，Macro F1 为 {row['macro_f1']:.3f}。该结果不能升级证据等级。",
-                f"The validation-frozen selective rule retains {row['coverage']:.1%} in D4 replay with Macro F1 {row['macro_f1']:.3f}. This does not upgrade the evidence level.",
+                f"验证集的选择性规则在 D4 重测中保留 {row['coverage']:.1%}，Macro F1 为 {row['macro_f1']:.3f}。",
+                f"The validation selective rule retains {row['coverage']:.1%} in D4 retest with Macro F1 {row['macro_f1']:.3f}.",
                 lang,
             )
         )

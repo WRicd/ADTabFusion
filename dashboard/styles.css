@@ -1,52 +1,77 @@
+/* Tokens for the custom .ad-* components only.
+   Streamlit's OWN widgets are themed by .streamlit/config.toml, which is the
+   single source of truth -- it is the only thing that can colour the
+   canvas-rendered dataframe. dashboard.theme.apply_theme() appends a :root
+   block that pins these to the resolved mode. */
 :root {
-  --ad-navy: #16324f;
-  --ad-blue: #2f6b9a;
-  --ad-teal: #168c8c;
-  --ad-green: #2e8b67;
-  --ad-amber: #c78321;
-  --ad-red: #b84a4a;
+  --ad-surface-1: #ffffff;
+  --ad-surface-2: #f6f8fa;
   --ad-ink: #17212b;
   --ad-muted: #5f6b76;
   --ad-border: #d9e2ea;
-  --ad-surface: #f6f8fa;
+  --ad-heading: #16324f;
+  --ad-accent: #168c8c;
+  --ad-grid: #e9eef2;
+  --ad-cn: #2a78d6;
+  --ad-mci: #eda100;
+  --ad-ad: #e34948;
 }
 
-html, body, [class*="st-"] {
-  font-family: Inter, "Segoe UI", Arial, sans-serif;
-  letter-spacing: 0;
+/* Streamlit's theme switch does not trigger a rerun, so a Python-resolved
+   mode is one rerun stale right after a flip. The frontend default is
+   "System" (OS-following), so mirroring the dark tokens here keeps the
+   .ad-* layer in step with the canvas in that common case. apply_theme()
+   appends its :root block after this file and therefore still wins for an
+   explicit Light/Dark pick. Values mirror theme.py DARK + CLASS_COLORS_DARK;
+   a test asserts they cannot drift. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ad-surface-1: #1a1a19;
+    --ad-surface-2: #232322;
+    --ad-ink: #f2f3f4;
+    --ad-muted: #a8b0b8;
+    --ad-border: #34383c;
+    --ad-heading: #cfe0f0;
+    --ad-accent: #4ec9c9;
+    --ad-grid: #2c3034;
+    --ad-cn: #3987e5;
+    --ad-mci: #c98500;
+    --ad-ad: #e34948;
+  }
 }
 
-.stApp {
-  background: #ffffff;
-  color: var(--ad-ink);
+/* Typography comes from [theme] font in .streamlit/config.toml.
+   A `[class*="st-"]` font-family rule MUST NOT be reintroduced here: Streamlit's
+   emotion cache key is literally "st-emotion-cache" and its styletron prefix is
+   "st-", so that selector matches every Streamlit element -- including
+   <span data-testid="stIconMaterial">keyboard_arrow_down</span>, whose icon is a
+   FONT LIGATURE. Overriding its font-family makes the ligature fail and the icon
+   typesets as its literal name. Specificity ties at (0,1,0) and an injected
+   stylesheet wins on document order, so the override silently beat Streamlit.
+   This guard restores the icon font even if something else overrides it. */
+[data-testid="stIconMaterial"],
+[data-testid$="DynamicIcon"],
+[data-testid^="stExpanderIcon"] {
+  font-family: "Material Symbols Rounded" !important;
+  font-feature-settings: "liga" !important;
 }
 
+/* The app surface is painted by config.toml; only the custom layer is set here. */
 [data-testid="stSidebar"] {
-  background: #f6f8fa;
   border-right: 1px solid var(--ad-border);
 }
 
+/* The header hosts the toolbar, which hosts the ONLY runtime theme switch
+   Streamlit provides (System / Light / Dark) and the sidebar-expand button.
+   It must stay visible -- display:none here removed the user's ability to
+   change theme at all. client.toolbarMode="viewer" already hides the
+   developer affordances. */
 [data-testid="stHeader"] {
-  display: none;
-}
-
-[data-testid="stSidebarNav"] a,
-[data-testid="stSidebarNav"] a span {
-  color: var(--ad-ink) !important;
+  background: transparent;
 }
 
 [data-testid="stSidebarNav"] a[aria-current="page"] {
-  background: #e4edf4 !important;
-}
-
-[data-baseweb="select"] > div {
-  background: #ffffff !important;
-  border-color: var(--ad-border) !important;
-  color: var(--ad-ink) !important;
-}
-
-[data-baseweb="select"] svg {
-  fill: var(--ad-muted) !important;
+  background: color-mix(in srgb, var(--ad-cn) 14%, transparent) !important;
 }
 
 [data-testid="stSidebarNav"] span,
@@ -62,7 +87,7 @@ html, body, [class*="st-"] {
 }
 
 h1, h2, h3 {
-  color: var(--ad-navy);
+  color: var(--ad-heading);
   letter-spacing: 0;
 }
 
@@ -78,7 +103,7 @@ h2 {
 }
 
 .ad-kicker {
-  color: var(--ad-teal);
+  color: var(--ad-accent);
   font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -107,10 +132,11 @@ h2 {
   margin: 0.25rem 0 0 0;
 }
 
+/* Stat tiles ---------------------------------------------------------- */
 .ad-metric-card {
-  background: var(--ad-surface);
+  background: var(--ad-surface-2);
   border: 1px solid var(--ad-border);
-  border-top: 3px solid var(--ad-blue);
+  border-top: 3px solid var(--ad-cn);
   border-radius: 8px;
   min-height: 116px;
   padding: 14px 16px;
@@ -125,11 +151,13 @@ h2 {
 }
 
 .ad-metric-value {
-  color: var(--ad-navy);
+  color: var(--ad-heading);
   font-size: 1.65rem;
   font-weight: 720;
   line-height: 1.15;
   margin-top: 4px;
+  /* Tabular figures keep a row of tiles optically aligned. */
+  font-variant-numeric: tabular-nums;
 }
 
 .ad-metric-note {
@@ -138,44 +166,79 @@ h2 {
   margin-top: 5px;
 }
 
+/* Badges and callouts -------------------------------------------------- */
 .ad-badge {
   border-radius: 999px;
   display: inline-block;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 4px 9px;
+  border: 1px solid transparent;
 }
 
-.ad-badge-success { background: #e7f4ed; color: #216849; }
-.ad-badge-warning { background: #fff3dc; color: #85550f; }
-.ad-badge-info { background: #e7f0f7; color: #254f70; }
+/* Callout fills are mixed against the active surface rather than hardcoded as
+   light tints, so a dark surface yields a dark tint and the body text keeps
+   using the mode's ink colour instead of a baked-in dark brown. */
+/* Each rule declares a solid light-mode fallback first; browsers without
+   color-mix (Chrome < 111) keep the original tints instead of rendering an
+   unstyled callout. */
+.ad-badge-success {
+  background: #e7f4ed;
+  border-color: #bfe0ce;
+  color: #1c5a3f;
+  background: color-mix(in srgb, #1baf7a 16%, var(--ad-surface-1));
+  border-color: color-mix(in srgb, #1baf7a 38%, var(--ad-surface-1));
+  color: var(--ad-ink);
+}
+
+.ad-badge-warning {
+  background: #fff3dc;
+  border-color: #ecd3a1;
+  color: #7a4e0d;
+  background: color-mix(in srgb, var(--ad-mci) 18%, var(--ad-surface-1));
+  border-color: color-mix(in srgb, var(--ad-mci) 42%, var(--ad-surface-1));
+  color: var(--ad-ink);
+}
+
+.ad-badge-info {
+  background: #e7f0f7;
+  border-color: #c2d7e7;
+  color: #214763;
+  background: color-mix(in srgb, var(--ad-cn) 14%, var(--ad-surface-1));
+  border-color: color-mix(in srgb, var(--ad-cn) 36%, var(--ad-surface-1));
+  color: var(--ad-ink);
+}
 
 .ad-banner {
-  border-left: 4px solid var(--ad-amber);
-  background: #fff8eb;
+  border-left: 4px solid var(--ad-mci);
   border-radius: 6px;
-  color: #65430e;
   margin: 0.9rem 0;
   padding: 11px 14px;
+  background: #fff8eb;
+  color: #65430e;
+  background: color-mix(in srgb, var(--ad-mci) 12%, var(--ad-surface-1));
+  color: var(--ad-ink);
 }
 
 .ad-banner-danger {
-  border-left-color: var(--ad-red);
+  border-left-color: var(--ad-ad);
   background: #fff1f1;
-  color: #7a2f2f;
+  background: color-mix(in srgb, var(--ad-ad) 12%, var(--ad-surface-1));
 }
 
 .ad-interpretation {
-  background: #edf7f6;
-  border-left: 4px solid var(--ad-teal);
+  border-left: 4px solid var(--ad-accent);
   border-radius: 6px;
-  color: #234f50;
   margin: 0.9rem 0;
   padding: 11px 14px;
+  background: #edf7f6;
+  color: #234f50;
+  background: color-mix(in srgb, var(--ad-accent) 12%, var(--ad-surface-1));
+  color: var(--ad-ink);
 }
 
 .ad-chart-title {
-  color: var(--ad-navy);
+  color: var(--ad-heading);
   font-size: 0.96rem;
   font-weight: 700;
   margin-top: 0.55rem;
@@ -188,8 +251,8 @@ h2 {
 }
 
 .ad-empty {
-  background: var(--ad-surface);
-  border: 1px dashed #aebbc6;
+  background: var(--ad-surface-2);
+  border: 1px dashed var(--ad-border);
   border-radius: 8px;
   color: var(--ad-muted);
   padding: 18px;
@@ -203,10 +266,10 @@ h2 {
 }
 
 .ad-method-step {
-  background: #f6f8fa;
+  background: var(--ad-surface-2);
   border: 1px solid var(--ad-border);
   border-radius: 8px;
-  color: var(--ad-navy);
+  color: var(--ad-heading);
   font-size: 0.78rem;
   font-weight: 650;
   min-height: 62px;
@@ -214,23 +277,46 @@ h2 {
   text-align: center;
 }
 
+/* A legend swatch beside a label, so class identity is never colour-alone in
+   prose or table headers. */
+.ad-swatch {
+  border-radius: 3px;
+  display: inline-block;
+  height: 10px;
+  margin-right: 6px;
+  vertical-align: baseline;
+  width: 10px;
+}
+
+.ad-swatch-cn  { background: var(--ad-cn); }
+.ad-swatch-mci { background: var(--ad-mci); }
+.ad-swatch-ad  { background: var(--ad-ad); }
+
 div[data-testid="stDataFrame"] {
   border: 1px solid var(--ad-border);
   border-radius: 8px;
   overflow: hidden;
 }
 
-div[data-testid="stVegaLiteChart"] {
-  background: #ffffff !important;
+div[data-testid="stExpander"] {
+  border: 1px solid var(--ad-border);
+  border-radius: 8px;
 }
 
+/* Charts sit on the page surface; Altair is configured to match in
+   dashboard/charts.py so the canvas never fights the mode. */
+div[data-testid="stVegaLiteChart"],
 div[data-testid="stVegaLiteChart"] canvas,
 div[data-testid="stVegaLiteChart"] svg {
-  background: #ffffff !important;
+  background: transparent !important;
+}
+
+@media (max-width: 900px) {
+  .ad-method-flow { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 800px) {
   .block-container { padding-top: 1.2rem; }
-  .ad-method-flow { grid-template-columns: 1fr 1fr; }
   .ad-metric-value { font-size: 1.35rem; }
+  .ad-metric-card { min-height: 96px; }
 }

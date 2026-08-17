@@ -45,6 +45,28 @@ streamlit run dashboard/app.py
 
 The dashboard supports Chinese and English from the sidebar.
 
+## Optional GPU and Deep Tabular Extensions
+
+The frozen results above are the scikit-learn baseline. An optional
+GPU-accelerated layer adds CUDA XGBoost, a PyTorch MLP, an FT-Transformer,
+soft-voting ensembles, Optuna hyperparameter search, MLflow tracking, and SHAP
+explanations. These write to a separate output directory and never overwrite
+frozen artifacts.
+
+```bash
+pip install -e ".[gpu,tracking,explain]"
+
+# Hyperparameter search on train/validation only
+python scripts/tune_hyperparameters.py --models xgboost torch_mlp --trials 60 --gpu
+
+# Single final fit, then one-shot locked temporal test evaluation
+python scripts/train_transition_aware_model.py --config configs/phase_d_transition_gpu.yaml
+```
+
+Search never loads the locked temporal test split, and the sklearn defaults
+behind the frozen numbers are pinned by regression tests. See
+[GPU workflow](docs/gpu_workflow.md) for details.
+
 ## Data Compliance
 
 Source ADNI/TADPOLE data are not redistributed. Public screenshots and dashboard pages contain aggregate metrics only; RID, PTID, and participant-level rows are not displayed. Users must obtain source data through the applicable ADNI/TADPOLE access and data-use process.

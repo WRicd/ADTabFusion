@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Mapping
 
-
 CSF_PATTERNS = [
     r"^ABETA($|_)",
     r"^ABETA42($|_)",
@@ -72,9 +71,7 @@ COGNITIVE_PREFIXES = (
 )
 
 
-def infer_modality(
-    column_name: str, metadata: Mapping[str, str] | None = None
-) -> str:
+def infer_modality(column_name: str, metadata: Mapping[str, str] | None = None) -> str:
     """Infer one audited modality, prioritizing dictionary source metadata."""
     metadata = metadata or {}
     name = column_name.upper()
@@ -89,8 +86,10 @@ def infer_modality(
         return "baseline_diagnosis"
     if base in IDENTIFIER_NAMES or any(name.startswith(f"{item}_") for item in IDENTIFIER_NAMES):
         return "identifier"
-    if name in VISIT_TIME_NAMES or base in VISIT_TIME_NAMES or any(
-        name.startswith(f"{item}_") for item in VISIT_TIME_NAMES
+    if (
+        name in VISIT_TIME_NAMES
+        or base in VISIT_TIME_NAMES
+        or any(name.startswith(f"{item}_") for item in VISIT_TIME_NAMES)
     ):
         return "visit_time"
     if base in ADMINISTRATIVE_NAMES or _contains_any(

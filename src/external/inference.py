@@ -9,7 +9,6 @@ import pandas as pd
 
 from src.external.schema_alignment import align_to_frozen_schema
 
-
 CLASS_NAMES = np.array(["CN", "MCI", "AD"])
 
 

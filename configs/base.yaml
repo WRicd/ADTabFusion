@@ -2,6 +2,10 @@ project:
   name: AD-TabFusion
   seed_list: [42, 43, 44, 45, 46]
   output_dir: outputs
+  tracking:
+    enabled: true
+    experiment_name: AD-TabFusion
+    # tracking_uri: "http://localhost:5000"  # uncomment for remote MLflow server
 
 data:
   raw_csv: data/raw/TADPOLE_D1_D2.csv
@@ -24,6 +28,7 @@ models:
   run:
     - logistic_regression
     - random_forest
+  use_gpu: false
   logistic_regression:
     C: 1.0
     max_iter: 2000
@@ -32,6 +37,19 @@ models:
     n_estimators: 300
     max_depth: null
     class_weight: balanced
+  xgboost:
+    n_estimators: 200
+    learning_rate: 0.05
+    max_depth: 3
+    early_stopping: false
+    use_gpu: false
+    verbosity: 0
+  lightgbm:
+    n_estimators: 200
+    learning_rate: 0.05
+    early_stopping: false
+    use_gpu: false
+    verbosity: -1
 
 evaluation:
   metrics:
@@ -42,5 +60,5 @@ evaluation:
     - cohen_kappa
 
 explainability:
-  run_shap: false
+  run_shap: true
   max_samples: 300

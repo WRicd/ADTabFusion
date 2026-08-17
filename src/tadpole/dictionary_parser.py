@@ -5,7 +5,6 @@ from typing import Iterable
 
 import pandas as pd
 
-
 DICTIONARY_FIELDS = ("FLDNAME", "TBLNAME", "TEXT", "TYPE", "UNITS")
 EMPTY_VALUES = {"", "-4", "-4.0", "nan", "none"}
 
@@ -37,9 +36,7 @@ def build_dictionary_index(dictionary: pd.DataFrame) -> dict[str, dict[str, str]
     return index
 
 
-def match_dictionary_columns(
-    columns: Iterable[str], dictionary: pd.DataFrame
-) -> dict[str, dict[str, str] | None]:
+def match_dictionary_columns(columns: Iterable[str], dictionary: pd.DataFrame) -> dict[str, dict[str, str] | None]:
     """Return exact dictionary metadata for each data column."""
     index = build_dictionary_index(dictionary)
     return {str(column): index.get(str(column).casefold()) for column in columns}
@@ -48,4 +45,3 @@ def match_dictionary_columns(
 def _clean_value(value: object) -> str:
     text = str(value).strip()
     return "" if text.casefold() in EMPTY_VALUES else text
-

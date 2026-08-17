@@ -4,7 +4,7 @@ import hashlib
 import json
 import platform
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -146,9 +146,7 @@ def freeze_direct_transfer_models(config: dict[str, Any], config_path: str | Pat
         manifest_path = manifest_dir / f"{role}_model_manifest.json"
         manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         manifests[role] = manifest
-    (manifest_dir / "deployment_decision.json").write_text(
-        json.dumps(decision, indent=2), encoding="utf-8"
-    )
+    (manifest_dir / "deployment_decision.json").write_text(json.dumps(decision, indent=2), encoding="utf-8")
     return manifests
 
 
@@ -163,14 +161,10 @@ def _build_manifest(
     model_path: Path,
 ) -> dict[str, Any]:
     try:
-        commit = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-        ).stdout.strip()
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         commit = None
-    feature_to_modality = {
-        feature: modality for modality, features in spec["groups"].items() for feature in features
-    }
+    feature_to_modality = {feature: modality for modality, features in spec["groups"].items() for feature in features}
     return {
         "model_id": f"phase_c_direct_{role}_{candidate_id}",
         "deployment_role": role,
@@ -190,7 +184,7 @@ def _build_manifest(
         "code_commit_hash": commit,
         "python_version": platform.python_version(),
         "sklearn_version": sklearn.__version__,
-        "creation_timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "creation_timestamp_utc": datetime.now(UTC).isoformat(),
         "d4_used_for_training_or_selection": False,
     }
 
@@ -199,11 +193,24 @@ def _compact_modality_mapping(features: list[str]) -> dict[str, list[str]]:
     groups = {
         "demographic": ["AGE", "PTGENDER", "PTEDUCAT"],
         "cognitive": [
-            "MMSE", "ADAS11", "ADAS13", "CDRSB", "RAVLT_immediate",
-            "RAVLT_learning", "RAVLT_forgetting", "RAVLT_perc_forgetting", "FAQ_bl",
+            "MMSE",
+            "ADAS11",
+            "ADAS13",
+            "CDRSB",
+            "RAVLT_immediate",
+            "RAVLT_learning",
+            "RAVLT_forgetting",
+            "RAVLT_perc_forgetting",
+            "FAQ_bl",
         ],
         "mri_structural": [
-            "Ventricles", "Hippocampus", "WholeBrain", "Entorhinal", "Fusiform", "MidTemp", "ICV",
+            "Ventricles",
+            "Hippocampus",
+            "WholeBrain",
+            "Entorhinal",
+            "Fusiform",
+            "MidTemp",
+            "ICV",
         ],
         "genetic": ["APOE4"],
     }

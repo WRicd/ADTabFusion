@@ -9,7 +9,6 @@ import pandas as pd
 from src.tadpole.dictionary_parser import load_tadpole_dictionary, match_dictionary_columns
 from src.tadpole.modality_mapper import infer_modality
 
-
 MODEL_MODALITIES = {
     "demographic",
     "cognitive",
@@ -97,9 +96,7 @@ def build_feature_catalog(
         modality = infer_modality(name, metadata)
         missing_rate = float(missing_rates[name])
         count = int(non_missing[name])
-        status, reason = _initial_recommendation(
-            modality, missing_rate, count, max_missing_rate, min_non_missing_count
-        )
+        status, reason = _initial_recommendation(modality, missing_rate, count, max_missing_rate, min_non_missing_count)
         records.append(
             {
                 "column_name": name,
@@ -230,10 +227,7 @@ def render_modality_map_markdown(catalog: pd.DataFrame) -> str:
     for modality, group in catalog.groupby("modality", sort=True):
         eligible = group["recommended_use"].isin({"include_primary", "include_optional"}).sum()
         primary = (group["recommended_use"] == "include_primary").sum()
-        lines.append(
-            f"| {modality} | {len(group)} | {group['missing_rate'].min():.3f} | "
-            f"{eligible} | {primary} |"
-        )
+        lines.append(f"| {modality} | {len(group)} | {group['missing_rate'].min():.3f} | " f"{eligible} | {primary} |")
     lines.extend(
         [
             "",
@@ -273,9 +267,7 @@ def _initial_recommendation(
     return "include_optional", "Eligible candidate pending duplicate resolution and primary-set ranking."
 
 
-def _resolve_duplicate_families(
-    catalog: pd.DataFrame, max_features_per_family: int
-) -> pd.DataFrame:
+def _resolve_duplicate_families(catalog: pd.DataFrame, max_features_per_family: int) -> pd.DataFrame:
     result = catalog.copy()
     candidates = result[result["recommended_use"] == "include_optional"]
     for _, group in candidates.groupby("duplicated_measurement_family", sort=False):
@@ -309,9 +301,9 @@ def _select_primary_features(catalog: pd.DataFrame, max_features: int) -> pd.Dat
             break
     result.loc[selected, "recommended_use"] = "include_primary"
     result.loc[selected, "exclusion_reason"] = ""
-    result.loc[
-        (result["recommended_use"] == "include_optional"), "exclusion_reason"
-    ] = "Eligible audited feature retained as optional but outside the primary feature cap."
+    result.loc[(result["recommended_use"] == "include_optional"), "exclusion_reason"] = (
+        "Eligible audited feature retained as optional but outside the primary feature cap."
+    )
     return result
 
 

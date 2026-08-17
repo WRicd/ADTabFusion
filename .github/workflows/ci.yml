@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with ruff
+        run: |
+          pip install ruff
+          ruff check src/ tests/ dashboard/ scripts/
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short
+
+  # GPU-dependent tests can only run on self-hosted runners
+  # Uncomment when you have a self-hosted GPU runner:
+  #
+  # gpu-test:
+  #   runs-on: [self-hosted, gpu]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.12"
+  #     - run: pip install -r requirements.txt
+  #     - run: python -m pytest tests/ -v --tb=short -x
+  #     - name: Test GPU detection
+  #       run: python -c "import xgboost; print(xgboost.__version__); import lightgbm; print(lightgbm.__version__)"

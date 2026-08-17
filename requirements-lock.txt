@@ -1,0 +1,34 @@
+# Exact versions of the verification environment (2026-07-26).
+#
+# NOTE: this is NOT the environment that produced the frozen Phase D artifacts.
+# Those were built with Python 3.12.13 / scikit-learn 1.9.0 and report
+# Macro F1 0.881; this environment reports 0.885. See
+# docs/reproducibility_note.md before citing either number.
+#
+# Install with:  pip install -r requirements-lock.txt
+
+# Core
+numpy==2.4.2
+pandas==2.3.3
+scikit-learn==1.8.0
+scipy==1.16.3
+joblib==1.5.3
+PyYAML==6.0.3
+
+# Visualization / dashboard
+matplotlib==3.10.8
+altair==6.1.0
+streamlit==1.57.0
+
+# GPU-accelerated models
+xgboost==3.2.0
+lightgbm==4.6.0
+torch==2.11.0+cu126
+
+# Tracking, tuning, explainability
+mlflow==3.14.0
+optuna==4.9.0
+shap==0.52.0
+
+# Tooling
+pytest==9.0.3

@@ -2,7 +2,7 @@
 
 ## 0:00–0:45｜执行摘要
 
-这是 AD-TabFusion，一个面向纵向临床表格数据的阿尔茨海默病转归研究项目。我们关注两个问题：未来 6 到 60 个月的 CN、MCI、AD 状态，以及 MCI 在不同时间窗内进展为 AD 的风险。首页只显示冻结结果：主要转归模型在锁定时间测试集上的 Macro F1 为 0.881，ROC-AUC OvR 为 0.958。Dashboard 不训练模型，只读取已有 artifact。
+这是 AD-TabFusion，一个面向纵向临床表格数据的阿尔茨海默病转归研究项目。我们关注两个问题：未来 6 到 60 个月的 CN、MCI、AD 状态，以及 MCI 在不同时间窗内进展为 AD 的风险。首页只显示当前结果：主要转归模型在锁定时间测试集上的 Macro F1 为 0.881，ROC-AUC OvR 为 0.958。Dashboard 不训练模型，只读取已有 artifact。
 
 ## 0:45–1:45｜转归感知模型
 
@@ -19,4 +19,3 @@ Calibration & Uncertainty 页面强调预测分数是否可信。等渗校准把
 ## 3:25–4:00｜科研边界
 
 最后看 Scientific Guardrails 和 External Replay。数据按受试者隔离，未来信息不进入特征，模型、校准器和阈值都不使用测试集选择。D4 始终标记为 exploratory post-hoc replay，不是独立的验证性外部验证。公开页面和截图只包含聚合结果，不显示 RID、PTID 或参与者级记录。
-

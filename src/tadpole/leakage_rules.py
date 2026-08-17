@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 BLOCKED_STATUSES = {
     "exclude_leakage",
     "exclude_identifier",
@@ -23,9 +22,7 @@ def build_leakage_artifacts(catalog: pd.DataFrame) -> tuple[dict[str, str], list
         for row in catalog.itertuples(index=False)
         if row.recommended_use in BLOCKED_STATUSES
     }
-    whitelist = catalog.loc[
-        catalog["recommended_use"] == "include_primary", "column_name"
-    ].astype(str).tolist()
+    whitelist = catalog.loc[catalog["recommended_use"] == "include_primary", "column_name"].astype(str).tolist()
     return blacklist, whitelist
 
 
@@ -41,21 +38,13 @@ def write_leakage_artifacts(
     report_file = Path(report_path)
     for path in (blacklist_file, whitelist_file, report_file):
         path.parent.mkdir(parents=True, exist_ok=True)
-    blacklist_file.write_text(
-        json.dumps(blacklist, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    whitelist_file.write_text(
-        json.dumps(whitelist, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    report_file.write_text(
-        render_leakage_audit(catalog, blacklist, whitelist), encoding="utf-8"
-    )
+    blacklist_file.write_text(json.dumps(blacklist, ensure_ascii=False, indent=2), encoding="utf-8")
+    whitelist_file.write_text(json.dumps(whitelist, ensure_ascii=False, indent=2), encoding="utf-8")
+    report_file.write_text(render_leakage_audit(catalog, blacklist, whitelist), encoding="utf-8")
     return blacklist, whitelist
 
 
-def render_leakage_audit(
-    catalog: pd.DataFrame, blacklist: dict[str, str], whitelist: list[str]
-) -> str:
+def render_leakage_audit(catalog: pd.DataFrame, blacklist: dict[str, str], whitelist: list[str]) -> str:
     excluded = catalog[catalog["recommended_use"].isin(BLOCKED_STATUSES)]
     counts = excluded["recommended_use"].value_counts().sort_index()
     direct = catalog[catalog["suspected_leakage"]]
@@ -84,9 +73,7 @@ def render_leakage_audit(
         ]
     )
     for row in direct.itertuples(index=False):
-        lines.append(
-            f"| `{row.column_name}` | {row.modality} | {row.exclusion_reason} |"
-        )
+        lines.append(f"| `{row.column_name}` | {row.modality} | {row.exclusion_reason} |")
     lines.extend(
         [
             "",
@@ -101,4 +88,3 @@ def render_leakage_audit(
         ]
     )
     return "\n".join(lines)
-

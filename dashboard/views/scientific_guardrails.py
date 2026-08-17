@@ -5,21 +5,52 @@ import streamlit as st
 from dashboard.components import interpretation_box, limitation_banner, page_header, section_header, status_badge
 from dashboard.i18n import bilingual, get_language
 
-
 lang = get_language()
 page_header(
     bilingual("研究设计", "STUDY DESIGN", lang),
     bilingual("科研护栏", "Scientific Guardrails", lang),
-    bilingual("明确区分训练、选择、锁定测试与探索性回放，避免展示层改变实验结论。", "Separating training, selection, locked testing, and exploratory replay so presentation cannot alter the experiment.", lang),
+    bilingual(
+        "明确区分训练、选择、锁定测试与探索性回放，避免展示层改变实验结论。",
+        "Separating training, selection, locked testing, and exploratory replay so presentation cannot alter the experiment.",
+        lang,
+    ),
 )
-status_badge(bilingual("冻结 artifact 为唯一结果来源", "Frozen artifacts are the sole result source", lang), "success")
+status_badge(bilingual("保证 artifact 为唯一结果来源", "Saved artifacts are the sole result source", lang), "success")
 
 section_header(bilingual("防泄漏设计", "Leakage controls", lang))
 controls = [
-    (bilingual("受试者级隔离", "Subject-level isolation", lang), bilingual("同一受试者不会跨训练、验证和锁定时间测试集。", "A subject cannot cross training, validation, and locked temporal test splits.", lang)),
-    (bilingual("只用历史特征", "Historical features only", lang), bilingual("预测时点之后的诊断、结局和派生目标不进入特征。", "Post-index diagnoses, outcomes, and target-derived fields do not enter features.", lang)),
-    (bilingual("验证集选择", "Validation-only selection", lang), bilingual("模型、校准方法和选择性预测阈值只由验证集确定。", "Model, calibrator, and selective threshold choices are made on validation data only.", lang)),
-    (bilingual("锁定测试", "Locked testing", lang), bilingual("时间测试集用于一次性冻结评估，不参与再拟合。", "The temporal test is used for frozen evaluation and never refitting.", lang)),
+    (
+        bilingual("受试者级隔离", "Subject-level isolation", lang),
+        bilingual(
+            "同一受试者不会跨训练、验证和锁定时间测试集。",
+            "A subject cannot cross training, validation, and locked temporal test splits.",
+            lang,
+        ),
+    ),
+    (
+        bilingual("只用历史特征", "Historical features only", lang),
+        bilingual(
+            "预测时点之后的诊断、结局和派生目标不进入特征。",
+            "Post-index diagnoses, outcomes, and target-derived fields do not enter features.",
+            lang,
+        ),
+    ),
+    (
+        bilingual("验证集选择", "Validation-only selection", lang),
+        bilingual(
+            "模型、校准方法和选择性预测阈值只由验证集确定。",
+            "Model, calibrator, and selective threshold choices are made on validation data only.",
+            lang,
+        ),
+    ),
+    (
+        bilingual("锁定测试", "Locked testing", lang),
+        bilingual(
+            "时间测试集用于一次性评估，不参与再拟合。",
+            "The temporal test is used for frozen evaluation and never refitting.",
+            lang,
+        ),
+    ),
 ]
 for title, body in controls:
     st.markdown(f"**{title}**")
@@ -52,4 +83,3 @@ limitation_banner(
     ),
     danger=True,
 )
-

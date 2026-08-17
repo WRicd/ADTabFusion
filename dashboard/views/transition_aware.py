@@ -7,22 +7,43 @@ import pandas as pd
 import streamlit as st
 
 from dashboard.artifacts import artifact, load_csv, load_json
-from dashboard.charts import show_chart
-from dashboard.components import chart_heading, empty_state, interpretation_box, metric_card, page_header, section_header, status_badge
+from dashboard.charts import (
+    class_color_scale,
+    sequential_color,
+    show_chart,
+    table_view,
+    value_labels,
+)
+from dashboard.components import (
+    chart_heading,
+    empty_state,
+    interpretation_box,
+    metric_card,
+    page_header,
+    section_header,
+    status_badge,
+)
 from dashboard.i18n import bilingual, get_language
-from dashboard.theme import CLASS_COLORS, CLASS_ORDER, COLORS
-
+from dashboard.theme import CLASS_ORDER, palette
 
 lang = get_language()
 page_header(
     bilingual("主要模型", "PRIMARY MODEL", lang),
     bilingual("转归感知模型", "Transition-Aware Model", lang),
-    bilingual("预测 6–60 个月未来诊断状态的纵向多分类模型。", "Longitudinal multiclass prediction of future diagnosis 6–60 months ahead.", lang),
+    bilingual(
+        "预测 6–60 个月未来诊断状态的纵向多分类模型。",
+        "Longitudinal multiclass prediction of future diagnosis 6–60 months ahead.",
+        lang,
+    ),
 )
 status_badge(bilingual("锁定时间测试", "Locked temporal test", lang), "success")
 
 results, error = load_csv(artifact("phase_d/temporal_validation/transition_model_results.csv"))
-row = results.loc[results.get("split", pd.Series(dtype=str)) == "locked_temporal_test"] if not results.empty else pd.DataFrame()
+row = (
+    results.loc[results.get("split", pd.Series(dtype=str)) == "locked_temporal_test"]
+    if not results.empty
+    else pd.DataFrame()
+)
 if error or row.empty:
     empty_state(error or "Transition metrics are unavailable.")
 else:
@@ -50,20 +71,22 @@ else:
                 "F1": result[f"f1_class_{index}"],
             }
         )
-    class_frame = pd.DataFrame(class_rows).melt("Class", var_name="Metric", value_name="Score")
-    class_chart = (
-        alt.Chart(class_frame)
-        .mark_bar(cornerRadiusEnd=2)
-        .encode(
-            x=alt.X("Metric:N", title=None),
-            xOffset="Class:N",
-            y=alt.Y("Score:Q", title="Score", scale=alt.Scale(domain=[0, 1])),
-            color=alt.Color("Class:N", scale=alt.Scale(domain=CLASS_ORDER, range=[CLASS_COLORS[x] for x in CLASS_ORDER]), legend=alt.Legend(orient="top")),
-            tooltip=["Class:N", "Metric:N", alt.Tooltip("Score:Q", format=".3f")],
-        )
-        .properties(height=300)
+    class_table = pd.DataFrame(class_rows)
+    class_frame = class_table.melt("Class", var_name="Metric", value_name="Score")
+    base = alt.Chart(class_frame).encode(
+        x=alt.X("Metric:N", title=None),
+        xOffset=alt.XOffset("Class:N", sort=CLASS_ORDER),
+        y=alt.Y("Score:Q", title="Score", scale=alt.Scale(domain=[0, 1])),
+        tooltip=["Class:N", "Metric:N", alt.Tooltip("Score:Q", format=".3f")],
     )
-    show_chart(class_chart)
+    class_chart = base.mark_bar(cornerRadiusEnd=2).encode(color=class_color_scale())
+    # Direct labels are the secondary encoding the validated palette requires;
+    # see dashboard/theme.py. They also carry the values for screen readers.
+    show_chart((class_chart + value_labels(base, "Score", fmt=".2f", dy=-8, align="center")).properties(height=300))
+    table_view(
+        class_table.round(3),
+        bilingual("以表格查看", "View as table", lang),
+    )
 
     section_header(bilingual("锁定测试混淆矩阵", "Locked test confusion matrix", lang))
     matrix = ast.literal_eval(str(result["confusion_matrix"]))
@@ -72,18 +95,29 @@ else:
         for i, actual in enumerate(CLASS_ORDER)
         for j, predicted in enumerate(CLASS_ORDER)
     ]
+    heat_frame = pd.DataFrame(heat_rows)
+    # Counts are magnitude, so this is a single-hue sequential ramp, and every
+    # cell is labelled -- the colour only ranks, the number states.
     heat = (
-        alt.Chart(pd.DataFrame(heat_rows))
+        alt.Chart(heat_frame)
         .mark_rect(cornerRadius=2)
         .encode(
             x=alt.X("Predicted:N", sort=CLASS_ORDER),
             y=alt.Y("Actual:N", sort=CLASS_ORDER),
-            color=alt.Color("Count:Q", scale=alt.Scale(range=["#EAF2F7", COLORS["blue"]]), legend=None),
+            color=sequential_color("Count:Q"),
             tooltip=["Actual:N", "Predicted:N", "Count:Q"],
         )
         .properties(height=260)
     )
-    text = heat.mark_text().encode(text="Count:Q", color=alt.condition("datum.Count > 160", alt.value("white"), alt.value(COLORS["ink"])))
+    midpoint = heat_frame["Count"].max() * 0.6
+    text = heat.mark_text(fontSize=12).encode(
+        text="Count:Q",
+        color=alt.condition(
+            f"datum.Count > {midpoint}",
+            alt.value(palette()["surface"]),
+            alt.value(palette()["ink"]),
+        ),
+    )
     show_chart(heat + text)
 
 section_header(bilingual("消融证据", "Ablation evidence", lang))
@@ -98,19 +132,30 @@ else:
         "features_plus_source_dx_forecast": "+ Source diagnosis + horizon",
     }
     chart_frame = ablation.assign(Label=ablation["ablation"].map(label_map))
-    chart_heading("Validation Macro F1", bilingual("比较固定验证集上的四种输入组合。", "Four input combinations on the fixed validation split.", lang))
-    chart = (
-        alt.Chart(chart_frame)
-        .mark_bar(cornerRadiusEnd=3)
-        .encode(
-            x=alt.X("macro_f1:Q", scale=alt.Scale(domain=[0, 1]), title="Macro F1"),
-            y=alt.Y("Label:N", sort=list(label_map.values()), title=None),
-            color=alt.condition("datum.ablation === 'features_plus_source_dx_forecast'", alt.value(COLORS["teal"]), alt.value(COLORS["blue"])),
-            tooltip=["Label:N", alt.Tooltip("macro_f1:Q", format=".3f")],
-        )
-        .properties(height=260)
+    chart_heading(
+        "Validation Macro F1",
+        bilingual("比较固定验证集上的四种输入组合。", "Four input combinations on the fixed validation split.", lang),
     )
-    show_chart(chart)
+    tokens = palette()
+    ablation_base = alt.Chart(chart_frame).encode(
+        x=alt.X("macro_f1:Q", scale=alt.Scale(domain=[0, 1]), title="Macro F1"),
+        y=alt.Y("Label:N", sort=list(label_map.values()), title=None),
+        tooltip=["Label:N", alt.Tooltip("macro_f1:Q", format=".3f")],
+    )
+    # One series highlighted against a recessive rest: no legend needed, the
+    # heading names it and each bar is labelled.
+    bars = ablation_base.mark_bar(cornerRadiusEnd=3).encode(
+        color=alt.condition(
+            "datum.ablation === 'features_plus_source_dx_forecast'",
+            alt.value(tokens["accent"]),
+            alt.value(tokens["muted"]),
+        )
+    )
+    show_chart((bars + value_labels(ablation_base, "macro_f1", dx=6)).properties(height=260))
+    table_view(
+        chart_frame[["Label", "macro_f1"]].rename(columns={"Label": "Ablation", "macro_f1": "Macro F1"}).round(3),
+        bilingual("以表格查看", "View as table", lang),
+    )
     interpretation_box(
         bilingual(
             "加入当前诊断状态后 Macro F1 从 0.645 提升到 0.810；再加入预测时间跨度后达到 0.820。",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -13,16 +14,27 @@ from sklearn.pipeline import Pipeline
 from src.data_loader import load_tadpole_csv
 from src.data_schema import build_diagnosis_labels, select_task_rows
 from src.evaluation import compute_metrics
+from src.experiment import (
+    configure_tracking,
+    end_run,
+    log_artifact,
+    log_metrics,
+    log_model,
+    log_params,
+    start_run,
+)
 from src.feature_groups import (
     available_groups,
     columns_for_modalities,
     infer_feature_types,
     write_used_feature_groups,
 )
-from src.models.sklearn_models import fit_model, predict_model, predict_proba_model
 from src.leakage import build_feature_blacklist, remove_blacklisted_features
+from src.models.sklearn_models import fit_model, predict_model, predict_proba_model
 from src.preprocessing import build_preprocessor
 from src.splits import make_subject_split
+
+LOGGER = logging.getLogger(__name__)
 
 
 def load_labeled_data(config: dict[str, Any]) -> tuple[pd.DataFrame, str, dict[str, int]]:
@@ -53,8 +65,13 @@ def run_single_experiment(
     model_name: str,
     config: dict[str, Any],
     seed: int,
+    log_mlflow: bool = True,
 ) -> tuple[dict[str, Any], Pipeline, pd.DataFrame]:
-    """Fit one model for one seed and return metrics and test-frame predictions."""
+    """Fit one model for one seed and return metrics and test-frame predictions.
+
+    When *log_mlflow* is *True* (default), metrics and artifacts are logged to
+    the local MLflow tracking store.
+    """
     output_dir = config["project"].get("output_dir", "outputs")
     subject_col = config["data"].get("subject_col", "RID")
     split_cfg = config.get("split", {})
@@ -86,11 +103,43 @@ def run_single_experiment(
         categorical_features,
         config.get("preprocessing", {}).get("numeric_impute", "median"),
     )
+    X_train_prep = preprocessor.fit_transform(train_df[feature_columns])
+    y_train_arr = train_df[label_col].to_numpy()
+
+    X_val_prep = None
+    y_val_arr = None
+    model_cfg = config.get("models", {})
+    if model_cfg.get(model_name, {}).get("early_stopping", False) and len(val_df) > 0:
+        X_val_prep = preprocessor.transform(val_df[feature_columns])
+        y_val_arr = val_df[label_col].to_numpy()
+
+    # -- MLflow: start nested run -------------------------------------------
+    if log_mlflow:
+        run_tags = {
+            "model": model_name,
+            "seed": str(seed),
+            "phase": config.get("project", {}).get("phase", "unknown"),
+            "n_features": str(len(feature_columns)),
+            "task_mode": config.get("data", {}).get("task_mode", "all_visits"),
+        }
+        start_run(run_name=f"{model_name}_seed{seed}", tags=run_tags)
+        log_params(
+            {
+                "model": model_name,
+                "seed": seed,
+                "n_features": len(feature_columns),
+                "test_size": split_cfg.get("test_size", 0.2),
+                "val_size": split_cfg.get("val_size", 0.1),
+            }
+        )
+
     estimator = fit_model(
         model_name,
-        preprocessor.fit_transform(train_df[feature_columns]),
-        train_df[label_col].to_numpy(),
-        config.get("models", {}),
+        X_train_prep,
+        y_train_arr,
+        model_cfg,
+        X_val=X_val_prep,
+        y_val=y_val_arr,
     )
     pipeline = Pipeline([("preprocessor", preprocessor), ("model", estimator)])
 
@@ -125,6 +174,18 @@ def run_single_experiment(
             "task_mode": config.get("data", {}).get("task_mode", "all_visits"),
         }
     )
+
+    # -- MLflow: log metrics & artifacts ------------------------------------
+    if log_mlflow:
+        log_metrics({k: v for k, v in metrics.items() if isinstance(v, int | float)})
+        confusion = metrics.get("confusion_matrix")
+        if isinstance(confusion, list):
+            log_params({"confusion_matrix": json.dumps(confusion)})
+        log_artifact(Path(output_dir) / "figures" / f"confusion_matrix_{model_name}_seed{seed}.png")
+        log_artifact(Path(output_dir) / "figures" / f"roc_curve_{model_name}_seed{seed}.png")
+        log_model(pipeline)
+        end_run()
+
     pred_df = test_df.copy()
     pred_df["y_true"] = y_true
     pred_df["y_pred"] = y_pred
@@ -146,9 +207,7 @@ def default_feature_columns(df: pd.DataFrame, output_dir: str | Path) -> list[st
     return list(dict.fromkeys([col for col in cols if col in df.columns]))
 
 
-def model_feature_columns(
-    df: pd.DataFrame, config: dict[str, Any], output_dir: str | Path
-) -> list[str]:
+def model_feature_columns(df: pd.DataFrame, config: dict[str, Any], output_dir: str | Path) -> list[str]:
     """Resolve available non-leakage model features."""
     features = default_feature_columns(df, output_dir)
     blacklist = build_feature_blacklist(config, df)
@@ -165,6 +224,19 @@ def run_baselines(config: dict[str, Any], quick: bool = False) -> pd.DataFrame:
     if not feature_columns:
         raise RuntimeError("No usable feature columns are available.")
 
+    # -- MLflow: top-level setup -------------------------------------------
+    use_mlflow = config.get("project", {}).get("tracking", {}).get("enabled", True)
+    if use_mlflow:
+        configure_tracking(
+            tracking_uri=config.get("project", {}).get("tracking", {}).get("uri"),
+            experiment_name=config.get("project", {}).get("tracking", {}).get("experiment_name", "AD-TabFusion"),
+        )
+        start_run(
+            run_name=f"baseline_{config.get('project', {}).get('phase', 'unknown')}",
+            tags={"phase": config.get("project", {}).get("phase", "unknown"), "task": "baseline"},
+            nested=False,
+        )
+
     rows = []
     best = None
     seeds = [42] if quick else config["project"].get("seed_list", [42])
@@ -175,7 +247,13 @@ def run_baselines(config: dict[str, Any], quick: bool = False) -> pd.DataFrame:
         for model_name in models:
             try:
                 metrics, pipeline, pred_df = run_single_experiment(
-                    df, label_col, feature_columns, model_name, config, seed
+                    df,
+                    label_col,
+                    feature_columns,
+                    model_name,
+                    config,
+                    seed,
+                    log_mlflow=use_mlflow,
                 )
             except ImportError as exc:
                 rows.append({"model": model_name, "seed": seed, "skipped": str(exc)})
@@ -193,14 +271,22 @@ def run_baselines(config: dict[str, Any], quick: bool = False) -> pd.DataFrame:
     summary = summarize_seed_results(results, ["model", "task_mode"])
     summary.to_csv(output_dir / "metrics" / "baseline_results_summary.csv", index=False)
     summary.to_csv(output_dir / "metrics" / f"baseline_results_summary_{task_mode}.csv", index=False)
+
+    # -- MLflow: log summary & finish ---------------------------------------
+    if use_mlflow:
+        if not summary.empty:
+            for _, row in summary.iterrows():
+                log_metrics({f"{col}": row[col] for col in summary.columns if col not in ["model", "task_mode"]})
+        log_artifact(output_dir / "metrics" / "baseline_results_summary.csv")
+        log_artifact(output_dir / "metrics" / "baseline_results_by_seed.csv")
+        end_run()
+
     if best is not None:
         _, model_name, seed, pipeline, pred_df = best
         joblib.dump(pipeline, output_dir / "models" / "best_model.joblib")
         pred_df.to_csv(output_dir / "reports" / "best_model_predictions.csv", index=False)
         meta = {"model": model_name, "seed": seed, "label_mapping": mapping}
-        (output_dir / "metrics" / "best_model.json").write_text(
-            json.dumps(meta, indent=2), encoding="utf-8"
-        )
+        (output_dir / "metrics" / "best_model.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     return results
 
 
@@ -251,9 +337,7 @@ def run_missing_modality(config: dict[str, Any], quick: bool = False) -> pd.Data
     groups = available_groups(df)
     labels = sorted(df[label_col].unique().tolist())
     for seed in seeds:
-        baseline_metrics, pipeline, pred_df = run_single_experiment(
-            df, label_col, all_cols, model_name, config, seed
-        )
+        baseline_metrics, pipeline, pred_df = run_single_experiment(df, label_col, all_cols, model_name, config, seed)
         baseline_score = baseline_metrics.get("macro_f1")
         rows.append({"masked_modality": "none", **baseline_metrics, "macro_f1_drop": 0.0})
         test_idx = pred_df.index
@@ -295,7 +379,9 @@ def run_missing_modality(config: dict[str, Any], quick: bool = False) -> pd.Data
         base = plot_df.loc[plot_df["masked_modality"].eq("none"), "macro_f1_mean"]
         if not base.empty:
             plot_df["macro_f1_drop_mean"] = float(base.iloc[0]) - plot_df["macro_f1_mean"]
-            _plot_bar(plot_df, "masked_modality", "macro_f1_drop_mean", output_dir / "figures" / "missing_modality_drop.png")
+            _plot_bar(
+                plot_df, "masked_modality", "macro_f1_drop_mean", output_dir / "figures" / "missing_modality_drop.png"
+            )
     else:
         _plot_bar(result, "masked_modality", "macro_f1_drop", output_dir / "figures" / "missing_modality_drop.png")
     return result
@@ -370,9 +456,7 @@ def _write_split_distribution(
         "n_rows": int(len(full_df)),
         "n_subjects": int(full_df[subject_col].nunique()) if subject_col in full_df.columns else None,
     }
-    (metrics_dir / f"split_distribution_seed_{seed}.json").write_text(
-        json.dumps(summary, indent=2), encoding="utf-8"
-    )
+    (metrics_dir / f"split_distribution_seed_{seed}.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
 
 def _save_eval_figures(

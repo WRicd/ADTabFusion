@@ -8,7 +8,6 @@ import pandas as pd
 
 from src.evaluation import compute_metrics
 
-
 CLASS_TO_ID = {"CN": 0, "MCI": 1, "AD": 2}
 
 
@@ -28,8 +27,10 @@ def evaluate_external_predictions(
         ("first_follow_up", "overall", first),
     ]
     bins = [
-        (0, 12, "0-12 months"), (12, 24, "12-24 months"),
-        (24, 36, "24-36 months"), (36, np.inf, ">36 months"),
+        (0, 12, "0-12 months"),
+        (12, 24, "12-24 months"),
+        (24, 36, "24-36 months"),
+        (36, np.inf, ">36 months"),
     ]
     for low, high, name in bins:
         subset = work[(work["forecast_months"] > low) & (work["forecast_months"] <= high)]
@@ -54,7 +55,7 @@ def evaluate_external_predictions(
             labels=[0, 1, 2],
         )
         row.update(
-            {key: json.dumps(value) if isinstance(value, (list, dict)) else value for key, value in metrics.items()}
+            {key: json.dumps(value) if isinstance(value, list | dict) else value for key, value in metrics.items()}
         )
         rows.append(row)
     return pd.DataFrame(rows)

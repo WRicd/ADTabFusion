@@ -8,7 +8,6 @@ from typing import Iterable
 
 import pandas as pd
 
-
 ID_CANDIDATES = ["RID", "PTID", "Subject", "SUBJECT", "LONIUID"]
 VISIT_CANDIDATES = [
     "VISCODE",
@@ -248,19 +247,14 @@ def inspect_csv(path: str | Path) -> dict:
         "time_columns": _match_candidates(columns, VISIT_CANDIDATES),
         "diagnosis_columns": _match_candidates(columns, DIAGNOSIS_CANDIDATES),
         "matched_features": matched,
-        "missing_rate_top10": {
-            str(column): round(float(rate), 4) for column, rate in missing_rates.items()
-        },
+        "missing_rate_top10": {str(column): round(float(rate), 4) for column, rate in missing_rates.items()},
         "recommended_use": _recommended_use(primary),
     }
 
 
 def build_modality_availability(inventory: Iterable[dict]) -> dict:
     """Aggregate file-level classifications into modality availability."""
-    availability = {
-        key: {"available": False, "files": [], "matched_columns": []}
-        for key in OUTPUT_MODALITIES
-    }
+    availability = {key: {"available": False, "files": [], "matched_columns": []} for key in OUTPUT_MODALITIES}
     for record in inventory:
         if record.get("read_status") == "failed":
             continue
@@ -298,21 +292,13 @@ def write_inventory_outputs(
     for path in (output_md_path, output_json_path, availability_path):
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    output_json_path.write_text(
-        json.dumps(inventory, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    availability_path.write_text(
-        json.dumps(availability, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    output_md_path.write_text(
-        render_inventory_markdown(inventory, availability, raw_dir), encoding="utf-8"
-    )
+    output_json_path.write_text(json.dumps(inventory, ensure_ascii=False, indent=2), encoding="utf-8")
+    availability_path.write_text(json.dumps(availability, ensure_ascii=False, indent=2), encoding="utf-8")
+    output_md_path.write_text(render_inventory_markdown(inventory, availability, raw_dir), encoding="utf-8")
     return availability
 
 
-def render_inventory_markdown(
-    inventory: list[dict], availability: dict, raw_dir: str | Path
-) -> str:
+def render_inventory_markdown(inventory: list[dict], availability: dict, raw_dir: str | Path) -> str:
     """Render a compact report that contains no row-level source values."""
     readable = sum(item.get("read_status") != "failed" for item in inventory)
     failed = len(inventory) - readable
@@ -407,11 +393,7 @@ def next_download_recommendations(availability: dict) -> list[str]:
         "mri_measurement": "Please check: Study Files -> Imaging -> MR Image Analysis.",
         "cognitive": "Please check: Study Files -> Assessments -> Neuropsychological.",
     }
-    return [
-        route
-        for key, route in routes.items()
-        if not availability.get(key, {}).get("available", False)
-    ]
+    return [route for key, route in routes.items() if not availability.get(key, {}).get("available", False)]
 
 
 def _read_sample(path: Path) -> tuple[pd.DataFrame, str]:
@@ -438,14 +420,8 @@ def _matched_features(columns: list[str]) -> dict[str, list[str]]:
         "demographic": _match_candidates(columns, DEMOGRAPHIC_CANDIDATES),
         "cognitive": _unique(cognitive),
         "mri": _match_candidates(columns, MRI_CANDIDATES),
-        "pet": _unique(
-            _match_candidates(columns, PET_CANDIDATES)
-            + _pattern_matches(columns, PET_PATTERNS)
-        ),
-        "csf": _unique(
-            _match_candidates(columns, CSF_CANDIDATES)
-            + _pattern_matches(columns, CSF_PATTERNS)
-        ),
+        "pet": _unique(_match_candidates(columns, PET_CANDIDATES) + _pattern_matches(columns, PET_PATTERNS)),
+        "csf": _unique(_match_candidates(columns, CSF_CANDIDATES) + _pattern_matches(columns, CSF_PATTERNS)),
         "apoe": _match_candidates(columns, APOE_CANDIDATES),
         "data_dictionary": _match_candidates(columns, DICTIONARY_CANDIDATES),
     }
@@ -461,31 +437,21 @@ def _classify(
     text = " ".join([str(path), *columns]).upper()
     path_text = str(path).upper()
     strong_diagnosis = bool(
-        normalized
-        & {
-            _normalize(name)
-            for name in ["DX", "DX_bl", "DXCHANGE", "DIAGNOSIS", "DIAGNOSISCN"]
-        }
+        normalized & {_normalize(name) for name in ["DX", "DX_bl", "DXCHANGE", "DIAGNOSIS", "DIAGNOSISCN"]}
     )
     has_id = bool(_match_candidates(columns, ID_CANDIDATES))
     has_visit = bool(_match_candidates(columns, VISIT_CANDIDATES))
-    dictionary = len(matched["data_dictionary"]) >= 3 or _contains_any(
-        path_text, DICTIONARY_KEYWORDS
-    )
+    dictionary = len(matched["data_dictionary"]) >= 3 or _contains_any(path_text, DICTIONARY_KEYWORDS)
     diagnosis = has_id and has_visit and strong_diagnosis
     demographics = len(matched["demographic"]) >= 2
     apoe = bool(matched["apoe"])
-    cognitive_signal_count = sum(
-        1 for column in columns if str(column).upper().startswith(COGNITIVE_PREFIXES)
-    )
+    cognitive_signal_count = sum(1 for column in columns if str(column).upper().startswith(COGNITIVE_PREFIXES))
     cognitive = bool(matched["cognitive"]) or cognitive_signal_count >= 2
 
     pet_specific = [name for name in PET_KEYWORDS if name != "TAU"]
     fluid_specific = [name for name in CSF_KEYWORDS if name != "TAU"]
     pet = bool(matched["pet"]) or _contains_any(text, pet_specific)
-    non_tau_csf_matches = [
-        column for column in matched["csf"] if _normalize(column) != _normalize("TAU")
-    ]
+    non_tau_csf_matches = [column for column in matched["csf"] if _normalize(column) != _normalize("TAU")]
     csf = bool(non_tau_csf_matches) or _contains_any(path_text, fluid_specific)
     if _contains_keyword(text, "TAU") and not (pet or csf):
         csf = _contains_any(path_text, ["PLASMA", "CSF", "BIOFLUID", "BIOMARKER"])
@@ -493,17 +459,10 @@ def _classify(
 
     mri_exact = bool(matched["mri"])
     mri_path = _contains_any(path_text, MRI_KEYWORDS)
-    mri_column_terms = sum(
-        _contains_any(str(column).upper(), [*MRI_KEYWORDS[1:], "HIPPO"])
-        for column in columns
-    )
-    mri = mri_exact or mri_path or (
-        mri_column_terms >= 2 and not pet and not cognitive
-    )
+    mri_column_terms = sum(_contains_any(str(column).upper(), [*MRI_KEYWORDS[1:], "HIPPO"]) for column in columns)
+    mri = mri_exact or mri_path or (mri_column_terms >= 2 and not pet and not cognitive)
 
-    biomarker_count = sum(
-        len(matched[key]) for key in ("mri", "pet", "csf", "apoe")
-    )
+    biomarker_count = sum(len(matched[key]) for key in ("mri", "pet", "csf", "apoe"))
     merged = (
         _normalize("RID") in normalized
         and bool(normalized & {_normalize("VISCODE"), _normalize("VISCODE2")})
@@ -586,8 +545,7 @@ def _numeric_measurement_columns(sample: pd.DataFrame) -> list[str]:
     for column in sample.columns:
         normalized_column = _normalize(str(column))
         if normalized_column in excluded or any(
-            token in normalized_column
-            for token in ("STATUS", "WARNING", "QCFLAG", "PROCESSDATE", "RUNDATE")
+            token in normalized_column for token in ("STATUS", "WARNING", "QCFLAG", "PROCESSDATE", "RUNDATE")
         ):
             continue
         series = sample[column].dropna()
@@ -604,20 +562,14 @@ def _match_candidates(columns: Iterable[str], candidates: Iterable[str]) -> list
     return [str(column) for column in columns if _normalize(str(column)) in candidate_keys]
 
 
-def _prefix_matches(
-    columns: Iterable[str], prefixes: tuple[str, ...], limit: int
-) -> list[str]:
+def _prefix_matches(columns: Iterable[str], prefixes: tuple[str, ...], limit: int) -> list[str]:
     matched = [str(column) for column in columns if str(column).upper().startswith(prefixes)]
     return matched[:limit]
 
 
 def _pattern_matches(columns: Iterable[str], patterns: Iterable[str]) -> list[str]:
     compiled = [re.compile(pattern, re.IGNORECASE) for pattern in patterns]
-    return [
-        str(column)
-        for column in columns
-        if any(pattern.search(str(column)) for pattern in compiled)
-    ]
+    return [str(column) for column in columns if any(pattern.search(str(column)) for pattern in compiled)]
 
 
 def _contains_any(text: str, keywords: Iterable[str]) -> bool:

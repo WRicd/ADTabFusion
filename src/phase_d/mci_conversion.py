@@ -8,16 +8,23 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
-    accuracy_score, average_precision_score, balanced_accuracy_score, confusion_matrix,
-    f1_score, log_loss, precision_score, recall_score, roc_auc_score,
+    accuracy_score,
+    average_precision_score,
+    balanced_accuracy_score,
+    confusion_matrix,
+    f1_score,
+    log_loss,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
 from sklearn.pipeline import Pipeline
 
 from src.data_schema import normalize_diagnosis
+from src.external.model_freezing import sha256_file
 from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model
 from src.preprocessing import build_preprocessor
-from src.external.model_freezing import sha256_file
 
 
 def select_mci_index_visits(
@@ -43,7 +50,8 @@ def select_mci_index_visits(
         future["months"] = (future["_date"] - source["_date"]).dt.days / 30.4375
         ad = future[future["_dx"] == "AD"]
         row = {
-            "RID": rid, "source_date": source["_date"].date().isoformat(),
+            "RID": rid,
+            "source_date": source["_date"].date().isoformat(),
             "max_followup_months": float(future["months"].max()),
             "first_ad_months": float(ad["months"].min()) if not ad.empty else np.nan,
         }
@@ -82,9 +90,21 @@ def build_landmark_cohort(
 def build_all_landmarks(config: dict[str, Any]) -> tuple[dict[int, pd.DataFrame], pd.DataFrame, list[str]]:
     data = config["data"]
     features = json.loads(Path(data["feature_profile"]).read_text(encoding="utf-8"))
-    required = [data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"), data.get("label_col", "DX"), *features]
-    frame = pd.read_csv(data["train_csv"], usecols=lambda column: column in required, low_memory=False, na_values=["", " ", "-4", "-4.0"])
-    index = select_mci_index_visits(frame, features, data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"), data.get("label_col", "DX"))
+    required = [
+        data.get("subject_col", "RID"),
+        data.get("date_col", "EXAMDATE"),
+        data.get("label_col", "DX"),
+        *features,
+    ]
+    frame = pd.read_csv(
+        data["train_csv"],
+        usecols=lambda column: column in required,
+        low_memory=False,
+        na_values=["", " ", "-4", "-4.0"],
+    )
+    index = select_mci_index_visits(
+        frame, features, data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"), data.get("label_col", "DX")
+    )
     split = json.loads(Path(data["temporal_split"]).read_text(encoding="utf-8"))["splits"]
     rid_to_split = {str(rid): name for name, values in split.items() for rid in values}
     index["split"] = index["RID"].astype(str).map(rid_to_split)
@@ -98,9 +118,17 @@ def build_all_landmarks(config: dict[str, Any]) -> tuple[dict[int, pd.DataFrame]
             {
                 "horizon_months": horizon,
                 "class_prevalence": float(eligible["label"].mean()) if len(eligible) else None,
-                "age_mean": float(pd.to_numeric(eligible.get("AGE"), errors="coerce").mean()) if "AGE" in eligible else None,
-                "education_mean": float(pd.to_numeric(eligible.get("PTEDUCAT"), errors="coerce").mean()) if "PTEDUCAT" in eligible else None,
-                "female_fraction": float(eligible.get("PTGENDER", pd.Series(dtype=object)).astype(str).str.casefold().eq("female").mean()) if "PTGENDER" in eligible else None,
+                "age_mean": float(pd.to_numeric(eligible.get("AGE"), errors="coerce").mean())
+                if "AGE" in eligible
+                else None,
+                "education_mean": float(pd.to_numeric(eligible.get("PTEDUCAT"), errors="coerce").mean())
+                if "PTEDUCAT" in eligible
+                else None,
+                "female_fraction": float(
+                    eligible.get("PTGENDER", pd.Series(dtype=object)).astype(str).str.casefold().eq("female").mean()
+                )
+                if "PTGENDER" in eligible
+                else None,
                 "feature_missing_rate": float(eligible[features].isna().mean().mean()) if len(eligible) else None,
             }
         )
@@ -116,7 +144,9 @@ def train_landmark_models(config: dict[str, Any]) -> pd.DataFrame:
     summary.to_csv(output / "cohorts" / "mci_landmark_summary.csv", index=False)
     rows, temporal_rows = [], []
     for horizon, cohort in cohorts.items():
-        train, validation, test = (cohort[cohort["split"] == name].copy() for name in ("train", "validation", "temporal_test"))
+        train, validation, test = (
+            cohort[cohort["split"] == name].copy() for name in ("train", "validation", "temporal_test")
+        )
         candidates = {}
         for model_name in config["models"]["run"]:
             if train["label"].nunique() < 2 or validation["label"].nunique() < 2:
@@ -124,28 +154,53 @@ def train_landmark_models(config: dict[str, Any]) -> pd.DataFrame:
             pipeline = _fit_binary(train, features, model_name, config)
             candidates[model_name] = pipeline
             metrics = binary_metrics(validation["label"].to_numpy(), pipeline.predict_proba(validation[features])[:, 1])
-            rows.append({"horizon_months": horizon, "model": model_name, "split": "validation", "n_subjects": len(validation), **metrics})
+            rows.append(
+                {
+                    "horizon_months": horizon,
+                    "model": model_name,
+                    "split": "validation",
+                    "n_subjects": len(validation),
+                    **metrics,
+                }
+            )
         if not candidates:
             continue
         candidate_rows = pd.DataFrame([row for row in rows if row["horizon_months"] == horizon])
-        selected = candidate_rows.sort_values(["pr_auc", "balanced_accuracy", "brier_score"], ascending=[False, False, True]).iloc[0]
+        selected = candidate_rows.sort_values(
+            ["pr_auc", "balanced_accuracy", "brier_score"], ascending=[False, False, True]
+        ).iloc[0]
         name = str(selected["model"])
         pipeline = candidates[name]
         if test["label"].nunique() >= 2:
             metrics = binary_metrics(test["label"].to_numpy(), pipeline.predict_proba(test[features])[:, 1])
-            temporal_rows.append({"horizon_months": horizon, "model": name, "split": "locked_temporal_test", "n_subjects": len(test), **metrics})
+            temporal_rows.append(
+                {
+                    "horizon_months": horizon,
+                    "model": name,
+                    "split": "locked_temporal_test",
+                    "n_subjects": len(test),
+                    **metrics,
+                }
+            )
         model_path = output / "models" / f"mci_landmark_{horizon}m_pipeline.joblib"
         joblib.dump(pipeline, model_path)
         manifest = {
-            "model_id": f"phase_d_mci_{horizon}m_{name}", "model_name": name,
-            "horizon_months": horizon, "tolerance_months": config["landmarks"].get("tolerance_months", 6),
-            "feature_order": features, "training_subject_count": len(train),
+            "model_id": f"phase_d_mci_{horizon}m_{name}",
+            "model_name": name,
+            "horizon_months": horizon,
+            "tolerance_months": config["landmarks"].get("tolerance_months", 6),
+            "feature_order": features,
+            "training_subject_count": len(train),
             "censoring_rule": "negative requires follow-up through horizon minus tolerance",
-            "calibration_data": None, "d4_used_for_selection": False,
+            "calibration_data": None,
+            "d4_used_for_selection": False,
             "model_sha256": sha256_file(model_path),
         }
-        (output / "manifests" / f"mci_landmark_{horizon}m_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    internal = pd.DataFrame(rows); temporal = pd.DataFrame(temporal_rows)
+        (output / "manifests" / f"mci_landmark_{horizon}m_manifest.json").write_text(
+            json.dumps(manifest, indent=2), encoding="utf-8"
+        )
+    internal = pd.DataFrame(rows)
+    temporal = pd.DataFrame(temporal_rows)
     internal.to_csv(output / "internal_validation" / "mci_landmark_model_results.csv", index=False)
     temporal.to_csv(output / "temporal_validation" / "mci_risk_metrics.csv", index=False)
     return temporal
@@ -171,7 +226,12 @@ def binary_metrics(y_true: np.ndarray, probability: np.ndarray, threshold: float
 
 def _fit_binary(frame: pd.DataFrame, features: list[str], model_name: str, config: dict[str, Any]) -> Pipeline:
     numeric, categorical = infer_feature_types(frame, features)
-    preprocessor = build_preprocessor(numeric, categorical, config.get("preprocessing", {}).get("numeric_impute", "median"), bool(config.get("preprocessing", {}).get("add_missing_indicators", True)))
+    preprocessor = build_preprocessor(
+        numeric,
+        categorical,
+        config.get("preprocessing", {}).get("numeric_impute", "median"),
+        bool(config.get("preprocessing", {}).get("add_missing_indicators", True)),
+    )
     transformed = preprocessor.fit_transform(frame[features])
     model = fit_model(model_name, transformed, frame["label"].to_numpy(), config["models"])
     return Pipeline([("preprocessor", preprocessor), ("model", model)])

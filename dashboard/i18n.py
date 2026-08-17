@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import streamlit as st
 
-
 LANGUAGES = {"中文": "zh", "English": "en"}
 
 
@@ -22,4 +21,3 @@ def get_language() -> str:
 
 def bilingual(zh: str, en: str, lang: str | None = None) -> str:
     return zh if (lang or get_language()) == "zh" else en
-

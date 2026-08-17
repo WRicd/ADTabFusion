@@ -206,7 +206,7 @@ def plot_model_performance_overview() -> bool:
     ]
     available = [(col, label) for col, label in metrics if col in df.columns]
     if not available or "model" not in df.columns:
-        warnings.warn(f"Cannot draw model_performance_overview.png: expected summary columns not found.")
+        warnings.warn("Cannot draw model_performance_overview.png: expected summary columns not found.")
         return False
 
     plot_df = df.dropna(subset=[col for col, _ in available], how="all").copy()

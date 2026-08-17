@@ -5,4 +5,14 @@ matplotlib>=3.7
 PyYAML>=6.0
 joblib>=1.3
 pytest>=7.0
-streamlit>=1.30
+streamlit>=1.49
+# GPU-accelerated tree models (optional, auto-detected)
+xgboost>=2.0
+lightgbm>=4.0
+# Experiment tracking & hyperparameter optimization
+mlflow>=2.10
+optuna>=3.5
+# Explainability
+shap>=0.44
+# Progress bars
+tqdm>=4.66

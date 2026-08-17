@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 REQUIRED_VIEWS = {
@@ -22,4 +21,3 @@ def test_eight_required_views_exist_and_are_registered() -> None:
     for view in REQUIRED_VIEWS:
         assert f"views/{view}" in app_source
     assert "st.navigation" in app_source
-

@@ -7,15 +7,10 @@ import pandas as pd
 
 from src.evaluation import compute_metrics
 
-
-BOOTSTRAP_METRICS = [
-    "accuracy", "balanced_accuracy", "macro_f1", "roc_auc_ovr", "log_loss", "brier_score"
-]
+BOOTSTRAP_METRICS = ["accuracy", "balanced_accuracy", "macro_f1", "roc_auc_ovr", "log_loss", "brier_score"]
 
 
-def resample_subject_blocks(
-    frame: pd.DataFrame, rng: np.random.Generator, subject_col: str = "RID"
-) -> pd.DataFrame:
+def resample_subject_blocks(frame: pd.DataFrame, rng: np.random.Generator, subject_col: str = "RID") -> pd.DataFrame:
     subjects = frame[subject_col].dropna().unique()
     sampled = rng.choice(subjects, size=len(subjects), replace=True)
     blocks = []
@@ -68,9 +63,7 @@ def subject_bootstrap_ci(
     return pd.DataFrame(rows)
 
 
-def _metrics(
-    frame: pd.DataFrame, truth_col: str, prediction_col: str, probability_cols: list[str]
-) -> dict[str, Any]:
+def _metrics(frame: pd.DataFrame, truth_col: str, prediction_col: str, probability_cols: list[str]) -> dict[str, Any]:
     probability = frame[probability_cols].to_numpy(dtype=float)
     return compute_metrics(
         frame[truth_col].to_numpy(dtype=int),

@@ -7,7 +7,6 @@ import pandas as pd
 
 from src.external.d3_cohort import select_d3_index_records
 
-
 LABEL_TO_ID = {"CN": 0, "MCI": 1, "AD": 2}
 
 
@@ -16,9 +15,14 @@ def normalize_diagnosis_label(value: object) -> str | None:
         return None
     text = str(value).strip().casefold()
     mapping = {
-        "cn": "CN", "nl": "CN", "normal": "CN",
-        "mci": "MCI", "lmci": "MCI", "emci": "MCI",
-        "ad": "AD", "dementia": "AD",
+        "cn": "CN",
+        "nl": "CN",
+        "normal": "CN",
+        "mci": "MCI",
+        "lmci": "MCI",
+        "emci": "MCI",
+        "ad": "AD",
+        "dementia": "AD",
     }
     return mapping.get(text)
 
@@ -37,7 +41,9 @@ def build_d3_d4_evaluation_cohort(
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     required_d3 = list(dict.fromkeys([subject_col, d3_date_col, *horizon_features]))
     d3_raw = pd.read_csv(
-        d3_csv, usecols=lambda column: column in required_d3, low_memory=False,
+        d3_csv,
+        usecols=lambda column: column in required_d3,
+        low_memory=False,
         na_values=["", " ", "-4", "-4.0"],
     )
     d3, _ = select_d3_index_records(d3_raw, subject_col, d3_date_col)
@@ -58,15 +64,17 @@ def build_d3_d4_evaluation_cohort(
     merged.loc[merged["_merge"] != "both", "exclusion_reason"] = "RID_not_in_D3"
     merged.loc[merged["exclusion_reason"].isna() & merged["_d3_date"].isna(), "exclusion_reason"] = "invalid_D3_date"
     merged.loc[merged["exclusion_reason"].isna() & merged["_d4_date"].isna(), "exclusion_reason"] = "invalid_D4_date"
-    merged.loc[merged["exclusion_reason"].isna() & (merged["forecast_days"] <= 0), "exclusion_reason"] = "nonpositive_horizon"
-    merged.loc[merged["exclusion_reason"].isna() & merged["D4_DIAGNOSIS"].isna(), "exclusion_reason"] = "unresolved_D4_diagnosis"
+    merged.loc[merged["exclusion_reason"].isna() & (merged["forecast_days"] <= 0), "exclusion_reason"] = (
+        "nonpositive_horizon"
+    )
+    merged.loc[merged["exclusion_reason"].isna() & merged["D4_DIAGNOSIS"].isna(), "exclusion_reason"] = (
+        "unresolved_D4_diagnosis"
+    )
     eligible = merged[merged["exclusion_reason"].isna()].copy()
     for role, path in (("primary", primary_predictions), ("sensitivity", sensitivity_predictions)):
         predictions = pd.read_csv(path)
         rename = {
-            column: f"direct_{role}_{column}"
-            for column in predictions.columns
-            if column not in {"RID", "D3_EXAMDATE"}
+            column: f"direct_{role}_{column}" for column in predictions.columns if column not in {"RID", "D3_EXAMDATE"}
         }
         eligible = eligible.merge(predictions.rename(columns=rename), on="RID", how="left")
     eligible = eligible.sort_values([subject_col, "_d4_date"]).reset_index(drop=True)
@@ -80,9 +88,9 @@ def build_d3_d4_evaluation_cohort(
         .rename(columns={"first": "normalized_label"})
     )
     label_counts.to_csv(output.parent / "audit" / "d4_label_mapping.csv", index=False)
-    d4[d4["D4_DIAGNOSIS"].isna()][["D4_DIAGNOSIS_RAW"]].value_counts(dropna=False).rename(
-        "count"
-    ).reset_index().to_csv(output.parent / "audit" / "d4_unresolved_labels.csv", index=False)
+    d4[d4["D4_DIAGNOSIS"].isna()][["D4_DIAGNOSIS_RAW"]].value_counts(dropna=False).rename("count").reset_index().to_csv(
+        output.parent / "audit" / "d4_unresolved_labels.csv", index=False
+    )
     eligible.drop(columns=["_merge", "_d3_date", "_d4_date", "exclusion_reason"], errors="ignore").to_csv(
         output / "d3_d4_matched_rows.csv", index=False
     )
@@ -96,18 +104,25 @@ def build_d3_d4_evaluation_cohort(
         "outcomes": {str(key): int(value) for key, value in reasons.items()},
     }
     report = [
-        "# D3/D4 Matching Audit", "",
+        "# D3/D4 Matching Audit",
+        "",
         f"- D3 subjects: {summary['d3_subject_count']}",
         f"- D4 rows: {summary['d4_row_count']}",
         f"- D4 unique subjects: {summary['d4_unique_subject_count']}",
         f"- Eligible matched rows: {summary['matched_rows']}",
         f"- Eligible matched subjects: {summary['matched_subjects']}",
-        "", "## Inclusion and Exclusion", "", "| Outcome | Rows |", "|---|---:|",
+        "",
+        "## Inclusion and Exclusion",
+        "",
+        "| Outcome | Rows |",
+        "|---|---:|",
     ]
     report.extend(f"| {key} | {value} |" for key, value in summary["outcomes"].items())
     report.extend(["", "## Follow-up Rows per Subject", ""])
     counts = eligible.groupby(subject_col).size()
-    report.append(f"Mean: {counts.mean():.2f}; median: {counts.median():.1f}; max: {counts.max() if len(counts) else 0}.")
+    report.append(
+        f"Mean: {counts.mean():.2f}; median: {counts.median():.1f}; max: {counts.max() if len(counts) else 0}."
+    )
     report.extend(["", "## Forecast Horizon (months)", ""])
     report.append(eligible["forecast_months"].describe().to_string())
     report.extend(["", "## Diagnosis Distribution", ""])

@@ -20,7 +20,6 @@ from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model, predict_model, predict_proba_model
 from src.preprocessing import build_preprocessor
 
-
 FORBIDDEN_FEATURES = {"RID", "DX", "DXCHANGE", "VISCODE"}
 SPARSE_MODALITIES = {"mri_dti", "csf", "pet_other"}
 COMPACT_FEATURES = [
@@ -63,18 +62,14 @@ def load_primary_whitelist(path: str | Path, expected_count: int = 69) -> list[s
         raise ValueError("Primary whitelist must be a JSON list of column names.")
     features = list(dict.fromkeys(features))
     if len(features) != expected_count:
-        raise ValueError(
-            f"Primary whitelist must contain exactly {expected_count} features; found {len(features)}."
-        )
+        raise ValueError(f"Primary whitelist must contain exactly {expected_count} features; found {len(features)}.")
     leaked = sorted(FORBIDDEN_FEATURES.intersection(features))
     if leaked:
         raise ValueError(f"Forbidden fields entered the primary whitelist: {', '.join(leaked)}")
     return features
 
 
-def load_catalog_groups(
-    catalog_path: str | Path, features: Iterable[str]
-) -> dict[str, list[str]]:
+def load_catalog_groups(catalog_path: str | Path, features: Iterable[str]) -> dict[str, list[str]]:
     catalog = pd.read_csv(catalog_path)
     selected = set(features)
     catalog = catalog[catalog["column_name"].isin(selected)]
@@ -101,15 +96,9 @@ def select_baseline_records(
     work = frame.copy()
     work["_row_order"] = np.arange(len(work))
     work["_is_baseline"] = (
-        work[visit_col].astype(str).str.strip().str.casefold().eq("bl")
-        if visit_col in work.columns
-        else False
+        work[visit_col].astype(str).str.strip().str.casefold().eq("bl") if visit_col in work.columns else False
     )
-    work["_sort_date"] = (
-        pd.to_datetime(work[date_col], errors="coerce")
-        if date_col in work.columns
-        else pd.NaT
-    )
+    work["_sort_date"] = pd.to_datetime(work[date_col], errors="coerce") if date_col in work.columns else pd.NaT
     work["_date_missing"] = work["_sort_date"].isna()
     work = work.sort_values(
         [subject_col, "_is_baseline", "_date_missing", "_sort_date", "_row_order"],
@@ -202,12 +191,12 @@ def write_cohort_outputs(
     ]
     for diagnosis, group in frame.groupby("diagnosis", sort=True):
         lines.append(f"| {diagnosis} | {len(group)} | {group[subject_col].nunique()} |")
-    lines.extend(["", "## Modality availability", "", "| Modality | Features | Available subjects |", "|---|---:|---:|"])
+    lines.extend(
+        ["", "## Modality availability", "", "| Modality | Features | Available subjects |", "|---|---:|---:|"]
+    )
     for modality, columns in groups.items():
         available = frame[columns].notna().any(axis=1)
-        lines.append(
-            f"| {modality} | {len(columns)} | {frame.loc[available, subject_col].nunique()} |"
-        )
+        lines.append(f"| {modality} | {len(columns)} | {frame.loc[available, subject_col].nunique()} |")
     lines.extend(["", "## Exclusions", ""])
     lines.extend(f"- {key}: {value}" for key, value in exclusions.items())
     lines.extend(["", "## Feature missingness", "", "| Feature | Missing rate |", "|---|---:|"])
@@ -298,9 +287,7 @@ def fit_evaluate_partition(
     pred_frame = test[[subject_col, "diagnosis", "label"]].copy()
     pred_frame["y_true"] = truth
     pred_frame["y_pred"] = predicted
-    calibration = _calibration_rows(
-        truth, probability, model_name, seed, result["task_mode"], add_missing_indicators
-    )
+    calibration = _calibration_rows(truth, probability, model_name, seed, result["task_mode"], add_missing_indicators)
     if probability is not None:
         pred_frame["max_proba"] = probability.max(axis=1)
         for index, label in enumerate(labels):
@@ -364,12 +351,8 @@ def run_primary_baselines(config: dict[str, Any], quick: bool = False) -> pd.Dat
         models_dir.mkdir(parents=True, exist_ok=True)
         joblib.dump(pipeline, models_dir / "phase_b_full_primary_best.joblib")
         predictions.to_csv(output / "best_model_predictions.csv", index=False)
-        (output / "best_model.json").write_text(
-            json.dumps(_csv_safe_metrics(metadata), indent=2), encoding="utf-8"
-        )
-        write_phase_b_explainability(
-            pipeline, frame, features, groups, predictions, config, quick=quick
-        )
+        (output / "best_model.json").write_text(json.dumps(_csv_safe_metrics(metadata), indent=2), encoding="utf-8")
+        write_phase_b_explainability(pipeline, frame, features, groups, predictions, config, quick=quick)
     return results
 
 
@@ -416,21 +399,18 @@ def write_phase_b_explainability(
             "importance_std": global_result.importances_std,
         }
     )
-    feature_to_modality = {
-        feature: modality for modality, columns in groups.items() for feature in columns
-    }
+    feature_to_modality = {feature: modality for modality, columns in groups.items() for feature in columns}
     importance["modality"] = importance["feature"].map(feature_to_modality)
     importance = importance.sort_values("importance", ascending=False)
     importance.to_csv(output / "feature_importance.csv", index=False)
     modality = (
-        importance.groupby("modality", as_index=False)["importance"]
-        .sum()
-        .sort_values("importance", ascending=False)
+        importance.groupby("modality", as_index=False)["importance"].sum().sort_values("importance", ascending=False)
     )
     modality.to_csv(output / "modality_importance.csv", index=False)
 
     per_class_rows = []
     for class_id, class_name in ((0, "CN"), (1, "MCI"), (2, "AD")):
+
         def scorer(estimator, X, y, target=class_id):
             return f1_score(y, estimator.predict(X), labels=[target], average="macro", zero_division=0)
 
@@ -443,16 +423,13 @@ def write_phase_b_explainability(
             scoring=scorer,
         )
         for feature, value in zip(features, result.importances_mean):
-            per_class_rows.append(
-                {"class": class_name, "feature": feature, "importance": float(value)}
-            )
+            per_class_rows.append({"class": class_name, "feature": feature, "importance": float(value)})
     pd.DataFrame(per_class_rows).to_csv(output / "per_class_feature_importance.csv", index=False)
 
     suspicious = [
         feature
         for feature in importance.head(20)["feature"]
-        if feature in FORBIDDEN_FEATURES
-        or feature.upper().startswith(("SITE", "COLPROT", "ORIGPROT", "EXAMDATE"))
+        if feature in FORBIDDEN_FEATURES or feature.upper().startswith(("SITE", "COLPROT", "ORIGPROT", "EXAMDATE"))
     ]
     warning_path = output / "EXPLAINABILITY_WARNING"
     if suspicious:
@@ -515,10 +492,7 @@ def _calibration_rows(
 
 
 def _csv_safe_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
-    return {
-        key: json.dumps(value) if isinstance(value, (list, dict)) else value
-        for key, value in metrics.items()
-    }
+    return {key: json.dumps(value) if isinstance(value, list | dict) else value for key, value in metrics.items()}
 
 
 def _merge_task_output(path: Path, new: pd.DataFrame, task_mode: str) -> None:
@@ -571,4 +545,3 @@ def _plot_importance(frame: pd.DataFrame, label: str, path: Path) -> None:
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
-

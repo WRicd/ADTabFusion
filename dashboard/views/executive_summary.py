@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from dashboard.artifacts import artifact, load_csv
-from dashboard.charts import show_chart
+from dashboard.charts import show_chart, table_view, value_labels
 from dashboard.components import (
     chart_heading,
     empty_state,
@@ -17,12 +17,11 @@ from dashboard.components import (
     status_badge,
 )
 from dashboard.i18n import bilingual, get_language
-from dashboard.theme import COLORS
-
+from dashboard.theme import palette
 
 lang = get_language()
 page_header(
-    bilingual("PHASE D 冻结证据", "PHASE D FROZEN EVIDENCE", lang),
+    bilingual("PHASE D", lang),
     "AD-TabFusion",
     bilingual(
         "从纵向临床表格数据估计未来诊断状态、MCI 进展风险与可信预测范围。",
@@ -34,7 +33,10 @@ status_badge(bilingual("只读 · 不重新训练", "Read-only · no retraining"
 
 metrics, error = load_csv(
     artifact("phase_d/temporal_validation/transition_model_results.csv"),
-    ("split", "macro_f1", "roc_auc_ovr", "balanced_accuracy"),
+    # n_subjects/n_rows are rendered below, so they are declared here too --
+    # otherwise a regenerated artifact missing them passes validation and then
+    # raises KeyError mid-render instead of showing the empty state.
+    ("split", "macro_f1", "roc_auc_ovr", "balanced_accuracy", "n_subjects", "n_rows"),
 )
 selected = metrics.loc[metrics["split"] == "locked_temporal_test"] if not metrics.empty else pd.DataFrame()
 
@@ -49,13 +51,21 @@ else:
     with columns[1]:
         metric_card("ROC-AUC OvR", f"{row['roc_auc_ovr']:.3f}", bilingual("三分类", "Three-class", lang))
     with columns[2]:
-        metric_card("Balanced Accuracy", f"{row['balanced_accuracy']:.3f}", bilingual("锁定时间测试集", "Locked temporal test", lang))
+        metric_card(
+            "Balanced Accuracy",
+            f"{row['balanced_accuracy']:.3f}",
+            bilingual("锁定时间测试集", "Locked temporal test", lang),
+        )
     with columns[3]:
         metric_card("Subjects", f"{int(row['n_subjects'])}", f"{int(row['n_rows'])} prediction pairs")
 
 section_header(
     bilingual("核心发现", "Core findings", lang),
-    bilingual("结果均来自现有冻结 CSV，不在看板内计算或拟合。", "All values come from frozen CSV artifacts; the dashboard performs no fitting.", lang),
+    bilingual(
+        "结果均来自现有CSV，不在看板内计算或拟合。",
+        "All values come from existing CSV artifacts; the dashboard performs no fitting.",
+        lang,
+    ),
 )
 
 ablation, ablation_error = load_csv(
@@ -74,19 +84,25 @@ else:
     plot = ablation.assign(display=ablation["ablation"].map(labels).fillna(ablation["ablation"]))
     chart_heading(
         bilingual("转归建模消融", "Transition modeling ablation", lang),
-        bilingual("验证集 Macro F1；加入当前诊断状态带来主要增益。", "Validation Macro F1; source diagnosis provides the main gain.", lang),
+        bilingual(
+            "验证集 Macro F1；加入当前诊断状态带来主要增益。",
+            "Validation Macro F1; source diagnosis provides the main gain.",
+            lang,
+        ),
     )
-    chart = (
-        alt.Chart(plot)
-        .mark_bar(cornerRadiusEnd=3, color=COLORS["blue"], size=24)
-        .encode(
-            x=alt.X("macro_f1:Q", title="Macro F1", scale=alt.Scale(domain=[0, 1])),
-            y=alt.Y("display:N", title=None, sort=list(labels.values())),
-            tooltip=[alt.Tooltip("display:N", title="Ablation"), alt.Tooltip("macro_f1:Q", format=".3f")],
-        )
-        .properties(height=230)
+    # A single series: the heading names it, so no legend box -- but every bar
+    # is directly labelled rather than forcing a read against the axis.
+    exec_base = alt.Chart(plot).encode(
+        x=alt.X("macro_f1:Q", title="Macro F1", scale=alt.Scale(domain=[0, 1])),
+        y=alt.Y("display:N", title=None, sort=list(labels.values())),
+        tooltip=[alt.Tooltip("display:N", title="Ablation"), alt.Tooltip("macro_f1:Q", format=".3f")],
     )
-    show_chart(chart)
+    bars = exec_base.mark_bar(cornerRadiusEnd=3, color=palette()["accent"], size=24)
+    show_chart((bars + value_labels(exec_base, "macro_f1", dx=6)).properties(height=230))
+    table_view(
+        plot[["display", "macro_f1"]].rename(columns={"display": "Ablation", "macro_f1": "Macro F1"}).round(3),
+        bilingual("以表格查看", "View as table", lang),
+    )
 
 interpretation_box(
     bilingual(
@@ -101,10 +117,13 @@ steps = [
     bilingual("TADPOLE 表格", "TADPOLE tables", lang),
     bilingual("泄漏审计", "Leakage audit", lang),
     bilingual("受试者级时间划分", "Subject-level temporal split", lang),
-    bilingual("冻结模型与校准器", "Frozen models & calibrators", lang),
+    bilingual("模型与校准器", "Models & calibrators", lang),
     bilingual("聚合证据展示", "Aggregate evidence display", lang),
 ]
-st.markdown('<div class="ad-method-flow">' + "".join(f'<div class="ad-method-step">{step}</div>' for step in steps) + "</div>", unsafe_allow_html=True)
+st.markdown(
+    '<div class="ad-method-flow">' + "".join(f'<div class="ad-method-step">{step}</div>' for step in steps) + "</div>",
+    unsafe_allow_html=True,
+)
 
 limitation_banner(
     bilingual(
@@ -116,8 +135,16 @@ limitation_banner(
 
 cta = st.columns(3)
 with cta[0]:
-    st.page_link("views/transition_aware.py", label=bilingual("转归感知模型", "Transition-Aware Model", lang), use_container_width=True)
+    st.page_link(
+        "views/transition_aware.py", label=bilingual("转归感知模型", "Transition-Aware Model", lang), width="stretch"
+    )
 with cta[1]:
-    st.page_link("views/mci_progression.py", label=bilingual("MCI 进展风险", "MCI Progression Risk", lang), use_container_width=True)
+    st.page_link(
+        "views/mci_progression.py", label=bilingual("MCI 进展风险", "MCI Progression Risk", lang), width="stretch"
+    )
 with cta[2]:
-    st.page_link("views/calibration_uncertainty.py", label=bilingual("校准与不确定性", "Calibration & Uncertainty", lang), use_container_width=True)
+    st.page_link(
+        "views/calibration_uncertainty.py",
+        label=bilingual("校准与不确定性", "Calibration & Uncertainty", lang),
+        width="stretch",
+    )

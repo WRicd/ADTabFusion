@@ -3,12 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from src.data_schema import MULTICLASS_MAPPING, normalize_diagnosis
-
 
 PAIR_METADATA = ["RID", "source_date", "future_date", "forecast_months", "target_diagnosis", "label"]
 

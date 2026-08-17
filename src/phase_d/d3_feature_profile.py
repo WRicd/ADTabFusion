@@ -2,15 +2,25 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 import pandas as pd
 
-
 CLINICAL_CANDIDATES = [
-    "AGE", "PTGENDER", "PTEDUCAT", "PTETHCAT", "PTRACCAT", "PTMARRY",
-    "MMSE", "ADAS13", "Ventricles", "Hippocampus", "WholeBrain",
-    "Entorhinal", "Fusiform", "MidTemp", "ICV",
+    "AGE",
+    "PTGENDER",
+    "PTEDUCAT",
+    "PTETHCAT",
+    "PTRACCAT",
+    "PTMARRY",
+    "MMSE",
+    "ADAS13",
+    "Ventricles",
+    "Hippocampus",
+    "WholeBrain",
+    "Entorhinal",
+    "Fusiform",
+    "MidTemp",
+    "ICV",
 ]
 
 
@@ -33,8 +43,12 @@ def build_d3_feature_profiles(
         "clinical_d3_core": [feature for feature in CLINICAL_CANDIDATES if feature in d3_set and feature in train_set],
     }
     required = list(dict.fromkeys([*whitelist, *compact_features, *CLINICAL_CANDIDATES]))
-    train = pd.read_csv(train_csv, usecols=lambda column: column in required, low_memory=False, na_values=["", " ", "-4", "-4.0"])
-    d3 = pd.read_csv(d3_csv, usecols=lambda column: column in required, low_memory=False, na_values=["", " ", "-4", "-4.0"])
+    train = pd.read_csv(
+        train_csv, usecols=lambda column: column in required, low_memory=False, na_values=["", " ", "-4", "-4.0"]
+    )
+    d3 = pd.read_csv(
+        d3_csv, usecols=lambda column: column in required, low_memory=False, na_values=["", " ", "-4", "-4.0"]
+    )
     audit_rows = []
     for feature in list(dict.fromkeys([*whitelist, *compact_features, *CLINICAL_CANDIDATES])):
         train_present = feature in train.columns
@@ -48,8 +62,11 @@ def build_d3_feature_profiles(
             unseen = "|".join(sorted(set(d3[feature].dropna().astype(str)) - set(train[feature].dropna().astype(str))))
         audit_rows.append(
             {
-                "feature": feature, "train_present": train_present, "d3_present": d3_present,
-                "train_missing_rate": train_missing, "d3_missing_rate": d3_missing,
+                "feature": feature,
+                "train_present": train_present,
+                "d3_present": d3_present,
+                "train_missing_rate": train_missing,
+                "d3_missing_rate": d3_missing,
                 "missing_rate_shift": d3_missing - train_missing,
                 "dtype_compatible": bool(train_present and d3_present and train_numeric == d3_numeric),
                 "unseen_d3_levels": unseen,
@@ -65,19 +82,33 @@ def build_d3_feature_profiles(
     excluded = [feature for feature in whitelist if feature not in d3_set]
     excluded_modalities = sorted({modality.get(feature, "unmapped") for feature in excluded})
     lines = [
-        "# D3-Compatible Feature Profiles", "",
-        "> Built from D1/D2 and D3 schemas only. D4 was not accessed.", "",
+        "# D3-Compatible Feature Profiles",
+        "",
+        "> Built from D1/D2 and D3 schemas only. D4 was not accessed.",
+        "",
         f"- Phase A whitelist: {len(whitelist)}",
         f"- d3_core: {len(profiles['d3_core'])}",
         f"- compact_d3_core: {len(profiles['compact_d3_core'])}",
         f"- clinical_d3_core: {len(profiles['clinical_d3_core'])}",
         f"- Excluded whitelist fields: {len(excluded)}",
-        f"- Excluded modalities: {', '.join(excluded_modalities)}", "",
-        "## Excluded Whitelist Fields", "", *(f"- `{feature}`" for feature in excluded), "",
-        "## Frozen Profiles", "",
+        f"- Excluded modalities: {', '.join(excluded_modalities)}",
+        "",
+        "## Excluded Whitelist Fields",
+        "",
+        *(f"- `{feature}`" for feature in excluded),
+        "",
+        "## Frozen Profiles",
+        "",
     ]
     for name, features in profiles.items():
         lines.extend([f"### {name}", "", ", ".join(f"`{feature}`" for feature in features), ""])
-    lines.extend(["## Compatibility Detail", "", "See `d3_feature_profile_compatibility.csv` for missingness shifts, dtypes, and unseen categorical levels.", ""])
+    lines.extend(
+        [
+            "## Compatibility Detail",
+            "",
+            "See `d3_feature_profile_compatibility.csv` for missingness shifts, dtypes, and unseen categorical levels.",
+            "",
+        ]
+    )
     (output / "d3_feature_profile_report.md").write_text("\n".join(lines), encoding="utf-8")
     return profiles

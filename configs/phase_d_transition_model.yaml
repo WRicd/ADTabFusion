@@ -21,7 +21,10 @@ preprocessing:
   add_missing_indicators: true
 
 models:
-  run: [logistic_regression, random_forest, hist_gradient_boosting]
+  run: [logistic_regression, random_forest, hist_gradient_boosting, xgboost, lightgbm]
+  use_gpu: false
   logistic_regression: {C: 1.0, max_iter: 2000, class_weight: balanced, random_state: 42}
   random_forest: {n_estimators: 300, max_depth: null, class_weight: balanced, random_state: 42}
   hist_gradient_boosting: {max_iter: 200, learning_rate: 0.05, max_leaf_nodes: 31, random_state: 42}
+  xgboost: {n_estimators: 200, learning_rate: 0.05, max_depth: 3, early_stopping: true, use_gpu: false, verbosity: 0, random_state: 42}
+  lightgbm: {n_estimators: 200, learning_rate: 0.05, early_stopping: true, use_gpu: false, verbosity: -1, random_state: 42}

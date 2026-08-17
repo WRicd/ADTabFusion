@@ -1,0 +1,54 @@
+# Streamlit's own theme -- the single source of truth for colour.
+#
+# WHY THIS FILE EXISTS
+# st.dataframe is glide-data-grid: its cells are painted with ctx.fillStyle
+# onto a <canvas>, using Streamlit's internal theme object (bgCell <- bgColor,
+# textDark <- textColor, bgHeader <- dataframeHeaderBackgroundColor). No amount
+# of injected CSS can repaint a bitmap, and Streamlit exposes no theme CSS
+# variables, so a custom stylesheet can only reach the wrapper border. Theme
+# options are also non-scriptable -- st.set_option("theme.primaryColor", ...)
+# raises "cannot be set on the fly" -- which makes config.toml the only
+# server-side surface that can colour the grid.
+#
+# BOTH [theme.light] AND [theme.dark] ARE REQUIRED.
+# With only a flat [theme] block the frontend registers a single "Custom Theme"
+# and its theme switcher hides itself (it returns no options when there is
+# fewer than two), which would silently remove the user's ability to switch.
+#
+# Values mirror dashboard/theme.py LIGHT/DARK exactly; a test asserts they stay
+# in sync. The validated CN/MCI/AD diagnosis palette is deliberately NOT here --
+# it stays single-sourced in theme.py, because chartCategoricalColors exists
+# only in the flat [theme] block and so cannot express two modes.
+
+[client]
+# Keeps the viewer-facing toolbar (which hosts the Light/Dark switcher) while
+# hiding the developer affordances (deploy, rerun, clear cache).
+toolbarMode = "viewer"
+
+[theme]
+base = "light"
+font = 'Inter, "Segoe UI", Arial, sans-serif'
+
+[theme.light]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f6f8fa"
+textColor = "#17212b"
+primaryColor = "#168c8c"
+linkColor = "#168c8c"
+borderColor = "#d9e2ea"
+dataframeBorderColor = "#d9e2ea"
+dataframeHeaderBackgroundColor = "#f6f8fa"
+codeBackgroundColor = "#f6f8fa"
+codeTextColor = "#17212b"
+
+[theme.dark]
+backgroundColor = "#1a1a19"
+secondaryBackgroundColor = "#232322"
+textColor = "#f2f3f4"
+primaryColor = "#4ec9c9"
+linkColor = "#4ec9c9"
+borderColor = "#34383c"
+dataframeBorderColor = "#34383c"
+dataframeHeaderBackgroundColor = "#232322"
+codeBackgroundColor = "#232322"
+codeTextColor = "#f2f3f4"

@@ -1,0 +1,108 @@
+# Phase D transition-aware model with GPU-accelerated and deep tabular models.
+#
+# This config is an EXPLORATORY extension of phase_d_transition_model.yaml.
+# The frozen Phase A-D evidence remains the sklearn-only baseline; results
+# produced here write to a separate output_dir so frozen artifacts are never
+# overwritten.
+
+project:
+  phase: phase_d_gpu
+  output_dir: outputs/phase_d_gpu
+  random_state: 42
+  tracking:
+    enabled: true
+    experiment_name: AD-TabFusion-GPU
+
+data:
+  train_csv: data/tadpole_challenge/TADPOLE_D1_D2.csv
+  feature_profile: outputs/phase_d/audit/clinical_d3_core_features.json
+  temporal_split: outputs/phase_d/cohorts/temporal_split_manifest.json
+  subject_col: RID
+  date_col: EXAMDATE
+  label_col: DX
+
+pairing:
+  min_horizon_months: 6
+  max_horizon_months: 60
+  subject_balanced: true
+
+preprocessing:
+  numeric_impute: median
+  add_missing_indicators: true
+
+models:
+  # Runtime note: the pipeline fits every model against all 4 ablations, then
+  # runs 5-fold CV on the winner. On an RTX 4060 with ~16k transition pairs the
+  # tree models take seconds each; ft_transformer takes ~10 min per fit, so
+  # including it pushes a full run past an hour. Drop it from `run` for routine
+  # iteration and add it back for a deliberate comparison.
+  run: [logistic_regression, random_forest, hist_gradient_boosting, xgboost, lightgbm, torch_mlp]
+  # Global GPU default; each model may override with its own use_gpu key.
+  use_gpu: true
+
+  logistic_regression: {C: 1.0, max_iter: 2000, class_weight: balanced, random_state: 42}
+  random_forest: {n_estimators: 300, max_depth: null, class_weight: balanced, random_state: 42}
+  hist_gradient_boosting: {max_iter: 200, learning_rate: 0.05, max_leaf_nodes: 31, random_state: 42}
+
+  xgboost:
+    n_estimators: 400
+    learning_rate: 0.05
+    max_depth: 4
+    subsample: 0.9
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+    early_stopping: true
+    early_stopping_rounds: 30
+    use_gpu: true
+    verbosity: 0
+    random_state: 42
+
+  lightgbm:
+    n_estimators: 400
+    learning_rate: 0.05
+    num_leaves: 31
+    min_child_samples: 20
+    subsample: 0.9
+    colsample_bytree: 0.8
+    early_stopping: true
+    early_stopping_rounds: 30
+    # LightGBM GPU needs an OpenCL build; keep CPU unless yours is GPU-enabled.
+    use_gpu: false
+    verbosity: -1
+    random_state: 42
+
+  torch_mlp:
+    hidden_sizes: [256, 128, 64]
+    dropout: 0.25
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    batch_size: 256
+    max_epochs: 300
+    patience: 25
+    class_weight: balanced
+    early_stopping: true
+    use_gpu: true
+    random_state: 42
+
+  # Add "ft_transformer" back to `run` above to include this. On subject-grouped
+  # CV it scored 0.773 vs 0.824 for hist_gradient_boosting, so it is kept as a
+  # documented comparison rather than a routine candidate.
+  ft_transformer:
+    d_token: 64
+    n_blocks: 3
+    n_heads: 8
+    attention_dropout: 0.2
+    ffn_dropout: 0.1
+    learning_rate: 0.0001
+    weight_decay: 0.00001
+    batch_size: 256
+    max_epochs: 100
+    patience: 15
+    class_weight: balanced
+    early_stopping: true
+    use_gpu: true
+    random_state: 42
+
+  soft_voting:
+    members: [xgboost, lightgbm, torch_mlp]
+    weights: [1.0, 1.0, 1.0]
