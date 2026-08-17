@@ -1,37 +1,62 @@
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 
 import pandas as pd
 
+from src.artifact_io import write_json
+
 LOGGER = logging.getLogger(__name__)
 
+# Canonical compact feature set. Every module that needs these columns -- the
+# modality ablations, the Phase B compact baseline, and the frozen Phase C
+# manifests -- must derive them from here so the sets cannot drift apart.
+DEMOGRAPHIC_FEATURES = ["AGE", "PTGENDER", "PTEDUCAT"]
+COGNITIVE_FEATURES = [
+    "MMSE",
+    "ADAS11",
+    "ADAS13",
+    "CDRSB",
+    "RAVLT_immediate",
+    "RAVLT_learning",
+    "RAVLT_forgetting",
+    "RAVLT_perc_forgetting",
+    "FAQ_bl",
+]
+MRI_STRUCTURAL_FEATURES = [
+    "Ventricles",
+    "Hippocampus",
+    "WholeBrain",
+    "Entorhinal",
+    "Fusiform",
+    "MidTemp",
+    "ICV",
+]
+GENETIC_FEATURES = ["APOE4"]
+
 MODALITY_GROUPS: dict[str, list[str]] = {
-    "demographic": ["AGE", "PTGENDER", "PTEDUCAT"],
-    "cognitive": [
-        "MMSE",
-        "ADAS11",
-        "ADAS13",
-        "CDRSB",
-        "RAVLT_immediate",
-        "RAVLT_learning",
-        "RAVLT_forgetting",
-        "RAVLT_perc_forgetting",
-        "FAQ_bl",
-    ],
-    "mri_derived": [
-        "Ventricles",
-        "Hippocampus",
-        "WholeBrain",
-        "Entorhinal",
-        "Fusiform",
-        "MidTemp",
-        "ICV",
-    ],
-    "genetic": ["APOE4"],
+    "demographic": DEMOGRAPHIC_FEATURES,
+    "cognitive": COGNITIVE_FEATURES,
+    "mri_derived": MRI_STRUCTURAL_FEATURES,
+    "genetic": GENETIC_FEATURES,
 }
+
+# Same features, keyed by the audited catalog modality names used by the frozen
+# Phase C manifests ("mri_structural" instead of the ablation name "mri_derived").
+CATALOG_MODALITY_GROUPS: dict[str, list[str]] = {
+    "demographic": DEMOGRAPHIC_FEATURES,
+    "cognitive": COGNITIVE_FEATURES,
+    "mri_structural": MRI_STRUCTURAL_FEATURES,
+    "genetic": GENETIC_FEATURES,
+}
+
+COMPACT_FEATURES = [
+    *DEMOGRAPHIC_FEATURES,
+    *COGNITIVE_FEATURES,
+    *MRI_STRUCTURAL_FEATURES,
+    *GENETIC_FEATURES,
+]
 
 
 def available_groups(
@@ -67,13 +92,13 @@ def write_used_feature_groups(used_groups: dict[str, list[str]], output_dir: str
     """Persist the feature groups that were actually available."""
     metrics_dir = Path(output_dir) / "metrics"
     metrics_dir.mkdir(parents=True, exist_ok=True)
-    (metrics_dir / "used_feature_groups.json").write_text(json.dumps(used_groups, indent=2), encoding="utf-8")
+    write_json(metrics_dir / "used_feature_groups.json", used_groups)
     used_features = {
         "groups": used_groups,
         "features": list(dict.fromkeys(col for cols in used_groups.values() for col in cols)),
         "notes": {"FAQ_bl": "baseline-only FAQ covariate"},
     }
-    (metrics_dir / "used_features.json").write_text(json.dumps(used_features, indent=2), encoding="utf-8")
+    write_json(metrics_dir / "used_features.json", used_features)
 
 
 def infer_feature_types(df: pd.DataFrame, feature_columns: list[str]) -> tuple[list[str], list[str]]:

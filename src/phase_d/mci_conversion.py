@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -20,11 +19,12 @@ from sklearn.metrics import (
 )
 from sklearn.pipeline import Pipeline
 
+from src.artifact_io import read_json, read_tadpole_table, write_json
 from src.data_schema import normalize_diagnosis
-from src.external.model_freezing import sha256_file
 from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model
 from src.preprocessing import build_preprocessor
+from src.provenance import sha256_file
 
 
 def select_mci_index_visits(
@@ -87,27 +87,27 @@ def build_landmark_cohort(
     return eligible, summary
 
 
-def build_all_landmarks(config: dict[str, Any]) -> tuple[dict[int, pd.DataFrame], pd.DataFrame, list[str]]:
+def load_mci_index_visits(config: dict[str, Any]) -> tuple[pd.DataFrame, list[str]]:
+    """Load MCI index visits with their frozen temporal split assignment.
+
+    Shared by the landmark and discrete-time models so both consume exactly the
+    same cohort definition and split file.
+    """
     data = config["data"]
-    features = json.loads(Path(data["feature_profile"]).read_text(encoding="utf-8"))
-    required = [
-        data.get("subject_col", "RID"),
-        data.get("date_col", "EXAMDATE"),
-        data.get("label_col", "DX"),
-        *features,
-    ]
-    frame = pd.read_csv(
-        data["train_csv"],
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
-    index = select_mci_index_visits(
-        frame, features, data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"), data.get("label_col", "DX")
-    )
-    split = json.loads(Path(data["temporal_split"]).read_text(encoding="utf-8"))["splits"]
+    features = read_json(data["feature_profile"])
+    subject_col = data.get("subject_col", "RID")
+    date_col = data.get("date_col", "EXAMDATE")
+    label_col = data.get("label_col", "DX")
+    frame = read_tadpole_table(data["train_csv"], [subject_col, date_col, label_col, *features])
+    index = select_mci_index_visits(frame, features, subject_col, date_col, label_col)
+    split = read_json(data["temporal_split"])["splits"]
     rid_to_split = {str(rid): name for name, values in split.items() for rid in values}
     index["split"] = index["RID"].astype(str).map(rid_to_split)
+    return index, features
+
+
+def build_all_landmarks(config: dict[str, Any]) -> tuple[dict[int, pd.DataFrame], pd.DataFrame, list[str]]:
+    index, features = load_mci_index_visits(config)
     cohorts, summaries = {}, []
     tolerance = config["landmarks"].get("tolerance_months", 6)
     for horizon in config["landmarks"]["horizons"]:
@@ -196,9 +196,7 @@ def train_landmark_models(config: dict[str, Any]) -> pd.DataFrame:
             "d4_used_for_selection": False,
             "model_sha256": sha256_file(model_path),
         }
-        (output / "manifests" / f"mci_landmark_{horizon}m_manifest.json").write_text(
-            json.dumps(manifest, indent=2), encoding="utf-8"
-        )
+        write_json(output / "manifests" / f"mci_landmark_{horizon}m_manifest.json", manifest)
     internal = pd.DataFrame(rows)
     temporal = pd.DataFrame(temporal_rows)
     internal.to_csv(output / "internal_validation" / "mci_landmark_model_results.csv", index=False)

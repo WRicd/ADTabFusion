@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -8,8 +7,10 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from src.artifact_io import write_json
 from src.evaluation import compute_metrics
 from src.phase_d.transition_model import ABLATIONS, load_transition_data
+from src.plotting import agg_pyplot
 
 
 def uncertainty_measures(probability: np.ndarray) -> pd.DataFrame:
@@ -93,22 +94,13 @@ def evaluate_selective_prediction(config: dict[str, Any]) -> dict[str, Any]:
         "temporal_test_used_for_threshold_selection": False,
         "d3_or_d4_used_for_threshold_selection": False,
     }
-    (output / "manifests" / "selective_prediction_manifest.json").write_text(
-        json.dumps(manifest, indent=2), encoding="utf-8"
-    )
+    write_json(output / "manifests" / "selective_prediction_manifest.json", manifest)
     _plot_risk_coverage(result, output / "figures" / "risk_coverage_curve.png")
     return {"manifest": manifest, "results": result}
 
 
 def _plot_risk_coverage(frame: pd.DataFrame, path: Path) -> None:
-    import os
-
-    os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-    import matplotlib
-
-    matplotlib.use("Agg", force=True)
-    import matplotlib.pyplot as plt
-
+    plt = agg_pyplot(path.parent)
     fig, ax = plt.subplots(figsize=(12.8, 7.2))
     for split, group in frame.groupby("split"):
         group = group.sort_values("coverage")

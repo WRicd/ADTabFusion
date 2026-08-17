@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pandas as pd
+
+from src.artifact_io import write_json
 
 BLOCKED_STATUSES = {
     "exclude_leakage",
@@ -38,8 +39,8 @@ def write_leakage_artifacts(
     report_file = Path(report_path)
     for path in (blacklist_file, whitelist_file, report_file):
         path.parent.mkdir(parents=True, exist_ok=True)
-    blacklist_file.write_text(json.dumps(blacklist, ensure_ascii=False, indent=2), encoding="utf-8")
-    whitelist_file.write_text(json.dumps(whitelist, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_json(blacklist_file, blacklist, ensure_ascii=False)
+    write_json(whitelist_file, whitelist, ensure_ascii=False)
     report_file.write_text(render_leakage_audit(catalog, blacklist, whitelist), encoding="utf-8")
     return blacklist, whitelist
 

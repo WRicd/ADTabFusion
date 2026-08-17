@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import copy
-import json
-import os
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -14,36 +12,16 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
+from src.artifact_io import read_json, read_tadpole_table, write_json
 from src.data_schema import MULTICLASS_MAPPING, normalize_diagnosis
-from src.evaluation import compute_metrics
+from src.evaluation import compute_metrics, csv_safe_metrics
 from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model, predict_model, predict_proba_model
+from src.plotting import optional_agg_pyplot
 from src.preprocessing import build_preprocessor
 
 FORBIDDEN_FEATURES = {"RID", "DX", "DXCHANGE", "VISCODE"}
 SPARSE_MODALITIES = {"mri_dti", "csf", "pet_other"}
-COMPACT_FEATURES = [
-    "AGE",
-    "PTGENDER",
-    "PTEDUCAT",
-    "MMSE",
-    "ADAS11",
-    "ADAS13",
-    "CDRSB",
-    "RAVLT_immediate",
-    "RAVLT_learning",
-    "RAVLT_forgetting",
-    "RAVLT_perc_forgetting",
-    "FAQ_bl",
-    "Ventricles",
-    "Hippocampus",
-    "WholeBrain",
-    "Entorhinal",
-    "Fusiform",
-    "MidTemp",
-    "ICV",
-    "APOE4",
-]
 SUMMARY_METRICS = [
     "accuracy",
     "balanced_accuracy",
@@ -57,7 +35,7 @@ SUMMARY_METRICS = [
 
 
 def load_primary_whitelist(path: str | Path, expected_count: int = 69) -> list[str]:
-    features = json.loads(Path(path).read_text(encoding="utf-8"))
+    features = read_json(path)
     if not isinstance(features, list) or not all(isinstance(item, str) for item in features):
         raise ValueError("Primary whitelist must be a JSON list of column names.")
     features = list(dict.fromkeys(features))
@@ -125,12 +103,7 @@ def load_phase_b_cohort(
         data_cfg.get("label_col", "DX"),
     ]
     required = list(dict.fromkeys(identity + features))
-    frame = pd.read_csv(
-        data_cfg["raw_csv"],
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    frame = read_tadpole_table(data_cfg["raw_csv"], required)
     missing = sorted(set(required) - set(frame.columns))
     if missing:
         raise ValueError(f"Full TADPOLE table is missing required fields: {', '.join(missing)}")
@@ -331,7 +304,7 @@ def run_primary_baselines(config: dict[str, Any], quick: bool = False) -> pd.Dat
                 except ImportError as exc:
                     rows.append({"model": model_name, "seed": seed, "skipped": str(exc)})
                     continue
-                rows.append(_csv_safe_metrics(metrics))
+                rows.append(csv_safe_metrics(metrics))
                 calibration_rows.extend(calibration)
                 score = float(metrics["val_macro_f1"])
                 if best is None or score > best[0]:
@@ -351,7 +324,7 @@ def run_primary_baselines(config: dict[str, Any], quick: bool = False) -> pd.Dat
         models_dir.mkdir(parents=True, exist_ok=True)
         joblib.dump(pipeline, models_dir / "phase_b_full_primary_best.joblib")
         predictions.to_csv(output / "best_model_predictions.csv", index=False)
-        (output / "best_model.json").write_text(json.dumps(_csv_safe_metrics(metadata), indent=2), encoding="utf-8")
+        write_json(output / "best_model.json", csv_safe_metrics(metadata))
         write_phase_b_explainability(pipeline, frame, features, groups, predictions, config, quick=quick)
     return results
 
@@ -491,10 +464,6 @@ def _calibration_rows(
     return rows
 
 
-def _csv_safe_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
-    return {key: json.dumps(value) if isinstance(value, list | dict) else value for key, value in metrics.items()}
-
-
 def _merge_task_output(path: Path, new: pd.DataFrame, task_mode: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
@@ -521,21 +490,14 @@ def _write_partition_summary(
             "visits": int(len(part)),
             "label_distribution": part["diagnosis"].value_counts().to_dict(),
         }
-    (output / f"split_{config['data'].get('task_mode', 'baseline_only')}_seed_{seed}.json").write_text(
-        json.dumps(summary, indent=2), encoding="utf-8"
-    )
+    write_json(output / f"split_{config['data'].get('task_mode', 'baseline_only')}_seed_{seed}.json", summary)
 
 
 def _plot_importance(frame: pd.DataFrame, label: str, path: Path) -> None:
     if frame.empty:
         return
-    try:
-        os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-        import matplotlib
-
-        matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt
-    except ImportError:
+    plt = optional_agg_pyplot(path.parent)
+    if plt is None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     plot = frame.iloc[::-1]

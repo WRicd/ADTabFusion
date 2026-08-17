@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import platform
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -12,18 +10,19 @@ import pandas as pd
 import sklearn
 from sklearn.pipeline import Pipeline
 
-from src.evaluation import compute_metrics
-from src.external.model_freezing import sha256_file, stable_subject_hash
+from src.artifact_io import read_json, write_json
+from src.evaluation import compute_metrics, csv_safe_metrics
 from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model
 from src.preprocessing import build_preprocessor
+from src.provenance import git_commit_hash, sha256_file, stable_subject_hash
 
 
 def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Path) -> dict[str, Any]:
     output = Path(config["project"]["output_dir"])
     pairs = pd.read_csv(output / "audit" / "future_diagnosis_pairs.csv", low_memory=False)
     source_manifest_path = Path(config["data"]["feature_source_manifest"])
-    source_manifest = json.loads(source_manifest_path.read_text(encoding="utf-8"))
+    source_manifest = read_json(source_manifest_path)
     base_features = source_manifest["feature_order"]
     features = [*base_features, "forecast_months"]
     train = pairs[pairs["split"] == "train"].copy()
@@ -46,7 +45,7 @@ def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Pa
                     "split": split_name,
                     "horizon": "overall",
                     "n_rows": len(frame),
-                    **_csv_metrics(metrics),
+                    **csv_safe_metrics(metrics),
                 }
             )
             rows.extend(_horizon_metric_rows(model_name, split_name, frame, pipeline, features))
@@ -67,10 +66,7 @@ def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Pa
     manifest_dir.mkdir(parents=True, exist_ok=True)
     model_path = model_dir / "horizon_aware_pipeline.joblib"
     joblib.dump(final_pipeline, model_path)
-    try:
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = None
+    commit = git_commit_hash()
     manifest = {
         "model_id": f"phase_c_horizon_aware_{selected_name}",
         "model_name": selected_name,
@@ -96,7 +92,7 @@ def train_and_freeze_horizon_model(config: dict[str, Any], config_path: str | Pa
         "selection_data": "D1/D2 validation subjects only",
         "d4_used_for_training_or_selection": False,
     }
-    (manifest_dir / "horizon_aware_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    write_json(manifest_dir / "horizon_aware_manifest.json", manifest)
     return manifest
 
 
@@ -136,10 +132,12 @@ def _horizon_metric_rows(
             subset["label"].to_numpy(), pipeline.predict(subset[features]), probability, labels=[0, 1, 2]
         )
         rows.append(
-            {"model": model_name, "split": split_name, "horizon": name, "n_rows": len(subset), **_csv_metrics(metrics)}
+            {
+                "model": model_name,
+                "split": split_name,
+                "horizon": name,
+                "n_rows": len(subset),
+                **csv_safe_metrics(metrics),
+            }
         )
     return rows
-
-
-def _csv_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
-    return {key: json.dumps(value) if isinstance(value, list | dict) else value for key, value in metrics.items()}

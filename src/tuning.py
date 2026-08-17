@@ -18,7 +18,6 @@ single final fit, keeping the test evaluation a one-shot measurement.
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 from typing import Any, Callable
@@ -28,6 +27,7 @@ import pandas as pd
 from sklearn.metrics import f1_score, log_loss, roc_auc_score
 from sklearn.model_selection import GroupKFold
 
+from src.artifact_io import write_json
 from src.models.sklearn_models import fit_model
 
 LOGGER = logging.getLogger(__name__)
@@ -354,9 +354,7 @@ def write_tuning_result(result: dict[str, Any], output_dir: str | Path) -> Path:
     """Persist a tuning result as JSON and return the written path."""
     directory = Path(output_dir) / "tuning"
     directory.mkdir(parents=True, exist_ok=True)
-    path = directory / f"best_params_{result['model']}.json"
-    path.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    return path
+    return write_json(directory / f"best_params_{result['model']}.json", result)
 
 
 def summarize_studies(results: list[dict[str, Any]]) -> pd.DataFrame:

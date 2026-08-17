@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
 
+from src.artifact_io import read_json
 from src.external.schema_alignment import align_to_frozen_schema
 
 CLASS_NAMES = np.array(["CN", "MCI", "AD"])
@@ -37,7 +37,7 @@ def predict_with_frozen_pipeline(
     manifest_path: str | Path,
     frame: pd.DataFrame,
 ) -> tuple[pd.DataFrame, list[str]]:
-    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    manifest = read_json(manifest_path)
     features = manifest["feature_order"]
     missing = [feature for feature in features if feature not in frame.columns]
     aligned = align_to_frozen_schema(frame, features)

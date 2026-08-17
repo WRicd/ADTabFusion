@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
+from src.artifact_io import read_json, read_tadpole_table, write_json
 from src.feature_groups import infer_feature_types
 
 
@@ -28,21 +28,11 @@ def audit_d3_schema(
     full_feature_threshold: float = 0.95,
     required_modalities: list[str] | None = None,
 ) -> dict[str, Any]:
-    features = json.loads(Path(whitelist_path).read_text(encoding="utf-8"))
+    features = read_json(whitelist_path)
     catalog = pd.read_csv(catalog_path)
     modality_map = dict(zip(catalog["column_name"].astype(str), catalog["modality"].astype(str)))
-    train = pd.read_csv(
-        train_csv,
-        usecols=lambda column: column in features,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
-    d3 = pd.read_csv(
-        d3_csv,
-        usecols=lambda column: column in features,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    train = read_tadpole_table(train_csv, features)
+    d3 = read_tadpole_table(d3_csv, features)
     present = [feature for feature in features if feature in d3.columns]
     absent = [feature for feature in features if feature not in d3.columns]
     numeric, categorical = infer_feature_types(train, features)
@@ -106,10 +96,7 @@ def audit_d3_schema(
     compatibility[["feature", "modality", "train_missing_rate", "d3_missing_rate", "missing_rate_shift"]].to_csv(
         output / "d3_missingness_shift.csv", index=False
     )
-    (output / "d3_modality_coverage.json").write_text(
-        json.dumps({"modalities": coverage, "deployment": decision}, indent=2),
-        encoding="utf-8",
-    )
+    write_json(output / "d3_modality_coverage.json", {"modalities": coverage, "deployment": decision})
     report = [
         "# D3 Schema Compatibility Audit",
         "",

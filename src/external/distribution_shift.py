@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -9,17 +8,19 @@ import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp
 
+from src.artifact_io import read_json, read_tadpole_table
 from src.external.d3_cohort import select_d3_index_records
 from src.external.inference import probability_frame
 from src.external.model_freezing import load_baseline_training_cohort
 from src.external.schema_alignment import align_to_frozen_schema
+from src.plotting import agg_pyplot
 
 
 def analyze_d1d2_d3_shift(config: dict[str, Any]) -> pd.DataFrame:
     data = config["data"]
     output = Path(config["project"]["output_dir"])
     manifest_path = output / "manifests" / "primary_model_manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = read_json(manifest_path)
     features = manifest["feature_order"]
     train = load_baseline_training_cohort(
         data["train_csv"],
@@ -30,12 +31,7 @@ def analyze_d1d2_d3_shift(config: dict[str, Any]) -> pd.DataFrame:
         data.get("label_col", "DX"),
     )
     required = list(dict.fromkeys([data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"), *features]))
-    d3_raw = pd.read_csv(
-        data["d3_csv"],
-        usecols=lambda column: column in required,
-        low_memory=False,
-        na_values=["", " ", "-4", "-4.0"],
-    )
+    d3_raw = read_tadpole_table(data["d3_csv"], required)
     d3, _ = select_d3_index_records(d3_raw, data.get("subject_col", "RID"), data.get("date_col", "EXAMDATE"))
     d3_aligned = align_to_frozen_schema(d3, features)
     rows: list[dict[str, Any]] = []
@@ -136,13 +132,7 @@ def _population_stability_index(train: np.ndarray, current: np.ndarray) -> float
 
 
 def _plot_shift(frame: pd.DataFrame, path: Path) -> None:
-    import os
-
-    os.environ.setdefault("MPLCONFIGDIR", str(path.parent / ".matplotlib"))
-    import matplotlib
-
-    matplotlib.use("Agg", force=True)
-    import matplotlib.pyplot as plt
+    plt = agg_pyplot(path.parent)
 
     numeric = frame[frame["kind"] == "numeric"].copy()
     numeric["abs_smd"] = numeric["standardized_mean_difference"].abs()
