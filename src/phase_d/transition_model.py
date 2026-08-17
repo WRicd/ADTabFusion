@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import platform
-import subprocess
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -17,7 +16,7 @@ from sklearn.pipeline import Pipeline
 
 from src.data_schema import MULTICLASS_MAPPING, normalize_diagnosis
 from src.evaluation import compute_metrics
-from src.external.model_freezing import sha256_file, stable_subject_hash
+from src.external.model_freezing import git_commit_hash, sha256_file, stable_subject_hash
 from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model
 from src.preprocessing import build_preprocessor
@@ -328,10 +327,7 @@ def _transition_manifest(
     config_path: str | Path,
     model_path: Path,
 ) -> dict[str, Any]:
-    try:
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = None
+    commit = git_commit_hash()
     return {
         "model_id": f"phase_d_transition_{model_name}",
         "model_name": model_name,

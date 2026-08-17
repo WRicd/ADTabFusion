@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+LOGGER = logging.getLogger(__name__)
 
 
 def load_tadpole_csv(path: str | Path) -> pd.DataFrame:
@@ -69,7 +72,8 @@ def _plot_missing_rate(missing_rate: pd.Series, path: Path) -> None:
 
         matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
-    except ImportError:
+    except ImportError as exc:
+        LOGGER.warning("matplotlib is not installed — skipping figure %s (%s).", path, exc)
         return
 
     top = missing_rate.head(30).iloc[::-1]
@@ -89,7 +93,8 @@ def _plot_label_distribution(labels: dict[str, int], path: Path) -> None:
 
         matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
-    except ImportError:
+    except ImportError as exc:
+        LOGGER.warning("matplotlib is not installed — skipping figure %s (%s).", path, exc)
         return
 
     if not labels:

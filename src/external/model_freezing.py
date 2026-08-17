@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import platform
 import subprocess
 from datetime import UTC, datetime
@@ -18,6 +19,22 @@ from src.feature_groups import infer_feature_types
 from src.models.sklearn_models import fit_model
 from src.preprocessing import build_preprocessor
 from src.tadpole.phase_b import load_catalog_groups, select_baseline_records
+
+LOGGER = logging.getLogger(__name__)
+
+
+def git_commit_hash() -> str | None:
+    """Return the current git commit, or None when it cannot be resolved.
+
+    A missing commit weakens the reproducibility record of every manifest that
+    embeds it, so the reason is logged instead of being discarded.
+    """
+    try:
+        completed = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        LOGGER.warning("Could not resolve the git commit for the manifest (%s: %s).", type(exc).__name__, exc)
+        return None
+    return completed.stdout.strip()
 
 
 def sha256_file(path: str | Path) -> str:
@@ -160,10 +177,7 @@ def _build_manifest(
     config_path: str | Path,
     model_path: Path,
 ) -> dict[str, Any]:
-    try:
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = None
+    commit = git_commit_hash()
     feature_to_modality = {feature: modality for modality, features in spec["groups"].items() for feature in features}
     return {
         "model_id": f"phase_c_direct_{role}_{candidate_id}",

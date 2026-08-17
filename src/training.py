@@ -256,6 +256,7 @@ def run_baselines(config: dict[str, Any], quick: bool = False) -> pd.DataFrame:
                     log_mlflow=use_mlflow,
                 )
             except ImportError as exc:
+                LOGGER.warning("Skipping model '%s' (seed %s): %s", model_name, seed, exc)
                 rows.append({"model": model_name, "seed": seed, "skipped": str(exc)})
                 continue
             rows.append(metrics)
@@ -394,7 +395,8 @@ def _plot_bar(df: pd.DataFrame, x_col: str, y_col: str, path: Path) -> None:
 
         matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
-    except ImportError:
+    except ImportError as exc:
+        LOGGER.warning("matplotlib is not installed — skipping figure %s (%s).", path, exc)
         return
     if df.empty or y_col not in df.columns:
         return
@@ -475,7 +477,10 @@ def _save_eval_figures(
         import matplotlib.pyplot as plt
         from sklearn.metrics import auc, confusion_matrix, roc_curve
         from sklearn.preprocessing import label_binarize
-    except ImportError:
+    except ImportError as exc:
+        LOGGER.warning(
+            "Plotting dependencies are unavailable — skipping '%s' figures in %s (%s).", tag, figure_dir, exc
+        )
         return
 
     figure_dir.mkdir(parents=True, exist_ok=True)
